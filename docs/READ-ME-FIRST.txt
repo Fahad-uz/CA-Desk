@@ -6,22 +6,36 @@ CA DESK {{VERSION}} - WINDOWS (64-BIT)
 
 No installation, administrator access, .NET download, account or internet
 connection is needed to use the application. Keep all extracted files together.
-The application begins with an empty workspace.
+A first launch starts empty unless an existing CA Desk database is found.
 
 Changes are automatically saved in:
-%LOCALAPPDATA%\CA Desk\ca-desk.db
+%LOCALAPPDATA%\CADesk\Data\cadesk.db
 
 To update: close CA Desk, extract the newer release into a new folder and
-launch its CA-Desk.exe. Your existing database remains in your Windows profile.
+launch its CA-Desk.exe. Your existing database remains in your Windows profile. v1.1.0 automatically
+finds and preserves v1.0.x data from the old CA Desk folder. Future versions
+use the permanent CADesk/Data path. Do not switch back to an old executable
+after upgrading; keep the legacy database as a recovery copy.
 
 Dashboard: click a summary card to view matching work.
-Clients: switch between cards and compact table, or open a client workspace.
+Clients: add an optional due date and see remaining calendar days; switch between cards and compact table, or open a client workspace.
 Master Work Table: combine search and filters; edit status and dates directly.
-Calendar: choose Month, Week or Day; click an entry to edit its details.
-Settings: see the local database location and application version.
+Notes: use the purple button on the right to create, search and edit personal
+study notes. Each note has a heading, plain-text body and editable date.
+Calendar: choose Month, Week or Day; click a work deadline or purple study
+note to edit it. Use the event filter to show everything, deadlines or notes.
+Client filtering keeps enabled personal notes visible.
+Settings: Export Backup saves all data to a new .db filename. Restore Backup
+validates a file, asks before replacing current data and keeps a recovery copy.
+Daily automatic backups and pre-update/pre-restore copies are saved under:
+%LOCALAPPDATA%\CADesk\Backups\
+Keep an exported copy on another drive as protection from computer failure.
+Removing the portable application does not remove your database or backups.
 
-Keyboard: Ctrl+F focuses page search; Ctrl+N adds a client; Ctrl+R refreshes.
-Enter saves an open form; Escape cancels. The top-right title-bar buttons
+Keyboard: Ctrl+F focuses page search; Ctrl+N adds a note when Notes is active,
+otherwise a client; Ctrl+R refreshes.
+Ctrl+S saves an open form; Escape cancels. Unsaved note changes require
+confirmation before discarding. The top-right title-bar buttons
 minimize, maximize/restore and close CA Desk. Double-click its title bar to
 maximize/restore, or drag the title bar to move the window.
 

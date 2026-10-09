@@ -1,32 +1,30 @@
 # Executed testing and scope
 
-## Confirmed checkpoint: 9 October 2026
+## Confirmed Windows checkpoint: 9 October 2026
 
-[Windows workflow run 37892612108](https://github.com/Fahad-uz/CA-Desk/actions/runs/37892612108) passed the native and packaged-executable checks for application commit `e53453fc380a56d0a088885bf536a04a01b0207c`. The v1.0.1 release workflow repeats these checks against its tagged source.
+[Windows workflow 37910326738](https://github.com/Fahad-uz/CA-Desk/actions/runs/37910326738) passed against application commit `c692f1c20228402b605e3f3cc184e3fb67ef0e6f`. The v1.1.0 release workflow repeats the checks against its release source and publishes only after they pass.
 
 - Release solution build: zero warnings and zero errors.
-- 31 xUnit core tests passed. Includes creation, rename, deletion and cascading foreign keys, duplicate names, blank input, all three statuses, deadline add/edit/removal, multiline and long notes, restart persistence, parameterised SQL, all deadline filters, combined filters, sorting, progress and a 100-client/2,000-work-area dataset.
-- 43 native WPF checks passed. Includes visible caption controls; Minimize, Maximize, Restore and Close actions; the actual empty dashboard, editor commands, client search control, inline status dropdown/date picker and native popups, invalid typed-date validation and correction, synchronized counts and progress, combined filters and preservation, visible reset selections, all header sorts, month overflow/day drill-down, entry opening, calendar edits/client filter/view memory, cancellation and confirmation of deletes, reopening the WPF app and no binding errors.
-- Actual WPF content was rendered at 1920×1080, 1420×900 and 1000×680, plus modal editor sizes. Dashboard, clients, master table, settings, calendar modes and forms were visually reviewed. The native table scrolled through 1,505 work areas with row virtualisation enabled.
-- The self-contained Windows x64 executable was independently launched from its published folder. It rendered WPF, wrote and reopened an isolated SQLite database, updated dashboard progress and operated its Minimize, Maximize, Restore and Close buttons successfully. The portable ZIP and checksum were produced after that verification.
+- 46 xUnit core tests passed: original CRUD/filter/sort/progress coverage plus client due dates, note CRUD and independent progress, restart persistence, schemas 1 and 2 upgrades, failed-migration rollback/recovery, future/corrupt database refusal, WAL-aware export, complete restore, daily retention and serialized writes. A 100-client/2,000-work-area case remains covered.
+- 83 native WPF checks passed: existing window controls, work editing/filtering/progress, native date/status controls and popups, plus due-date forms, note editor focus/shortcuts/validation/duplicate-save protection, empty-body and same-date notes, heading/body search, unsaved-close protection, note CRUD, date moves, calendar opening, all modes/event/client filters, purple notes and all work colours, backup Settings confirmation/validation, preferences and restart. No WPF binding errors occurred. Crowded month cells also keep both event types visible before overflow.
+- 10 upgrade checks passed. The workflow downloaded the actual v1.0.1 release, successfully launched its executable, and used its published Core DLL to create 150 fictional clients and 3,000 work areas. It compared every field, ID and relationship after automatic folder detection/migration; checked dashboard progress, master table and calendar; verified recovery copies and complete backup restoration; and reopened the canonical database without importing old data again. The v1.0.1 library also refused the newer schema without changing it.
+- The actual self-contained Windows executable launched, rendered WPF, saved/reopened SQLite, retained study notes and due dates, exported/restored a backup, updated calendar/progress and operated Minimize, Maximize, Restore and Close.
+- Actual WPF content was rendered at 1920×1080, 1420×900 and 1000×680, including Notes, mixed calendars, client workspaces, backup Settings and editors. The master table scrolled through 1,505 work areas with row virtualization.
 
-The first native run found a read-only progress binding error that was not detectable by compilation. It was corrected, and subsequent runs passed. Screenshot review also led to wider table controls and a visible All Statuses selection after reset; the final native checks include those fixes.
-
-The first screenshot run was limited by the hosted desktop resolution. Final checks render the actual WPF content at explicit sizes independent of that limit. Final release evidence is uploaded as the release-verification artifact, including screenshots, native results, xUnit results and packaged executable verification.
+The release-verification artifact contains native/upgrade reports, screenshots, xUnit results, executable verification and the source Git bundle. Only fictional isolated databases are used; no production data enters source or release distributions.
 
 ## Test boundaries
 
-The developer host is macOS. Core tests run there against actual SQLite; WPF source is cross-compiled there. Native UI execution is on a GitHub-hosted Windows Server runner. No physical Windows 10 or Windows 11 device test, exhaustive accessibility audit or every DPI setting is claimed. Targeted OS compatibility and actual test OS are distinct.
-
-Test clients are fictional and generated in isolated temporary directories. Production databases are excluded from source control and packages. No real client/accounting information was used.
+The developer host is macOS; core SQLite tests and Windows cross-compilation run locally. Native execution uses a GitHub-hosted Windows Server runner. Physical Windows 10/11 machines, every DPI setting and an exhaustive accessibility audit have not been tested. Targeted OS compatibility and the test OS are distinct.
 
 ## Reproduce
 
 ```powershell
 dotnet build CaDesk.slnx -c Release
 dotnet test tests/CaDesk.Tests -c Release --no-build
+./scripts/Verify-Upgrade.ps1 # GitHub CLI with access to the private repository
 dotnet run --project tests/CaDesk.WindowsTests -c Release --no-build -- artifacts/windows-checks
-./scripts/Publish.ps1 -Version 1.0.1
+./scripts/Publish.ps1 -Version 1.1.0
 ```
 
-The Windows console check returns a nonzero exit code on a failed workflow, invalid viewport render or binding error. `Publish.ps1` additionally fails if the packaged executable cannot launch, write/read SQLite or render its dashboard.
+All checks return a nonzero exit code on failure. The release workflow stops before publication if any upgrade, core, native or packaged-executable check fails.
