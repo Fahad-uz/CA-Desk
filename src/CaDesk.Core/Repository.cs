@@ -69,6 +69,18 @@ public sealed class Repository
         try { return Convert.ToInt64(cmd.ExecuteScalar()??throw new ValidationException("This work area no longer exists. Please refresh and try again.")); }
         catch(SqliteException ex) when(ex.SqliteExtendedErrorCode==787) { throw new ValidationException("Please choose an existing client."); }
     }
+    public void UpdateStatus(long id,WorkStatus status)
+    {
+        if(!Enum.IsDefined(status))throw new ValidationException("Please choose one of the three work statuses.");
+        UpdateField(id,"status",(int)status);
+    }
+    public void UpdateDeadline(long id,DateOnly? date)=>UpdateField(id,"deadline",(object?)date?.ToString("yyyy-MM-dd",CultureInfo.InvariantCulture)??DBNull.Value);
+    private void UpdateField(long id,string column,object value)
+    {
+        using var db=Open();using var cmd=db.CreateCommand();cmd.CommandText=$"UPDATE work_areas SET {column}=$value,updated_at=$now WHERE id=$id";
+        cmd.Parameters.AddWithValue("$value",value);cmd.Parameters.AddWithValue("$id",id);cmd.Parameters.AddWithValue("$now",Timestamp());
+        if(cmd.ExecuteNonQuery()!=1)throw new ValidationException("This work area no longer exists. Please refresh and try again.");
+    }
     public void DeleteClient(long id)=>Delete("clients",id);
     public void DeleteWork(long id)=>Delete("work_areas",id);
     private void Delete(string table,long id) { using var db=Open();using var cmd=db.CreateCommand();cmd.CommandText=$"DELETE FROM {table} WHERE id=$id";cmd.Parameters.AddWithValue("$id",id);cmd.ExecuteNonQuery(); }
