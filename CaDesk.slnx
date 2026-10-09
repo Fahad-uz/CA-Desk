@@ -1,10 +1,11 @@
+<?xml version="1.0" ?>
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/CaDesk.Core/CaDesk.Core.csproj" />
-    <Project Path="src/CaDesk.Desktop/CaDesk.Desktop.csproj" />
+    <Project Path="src/CaDesk.Core/CaDesk.Core.csproj"/>
+    <Project Path="src/CaDesk.Desktop/CaDesk.Desktop.csproj"/>
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/CaDesk.Tests/CaDesk.Tests.csproj" />
-    <Project Path="tests/CaDesk.WindowsTests/CaDesk.WindowsTests.csproj" />
+    <Project Path="tests/CaDesk.Tests/CaDesk.Tests.csproj"/>
+    <Project Path="tests/CaDesk.WindowsTests/CaDesk.WindowsTests.csproj"/>
   </Folder>
 </Solution>

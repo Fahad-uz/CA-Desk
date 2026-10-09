@@ -1,5 +1,9 @@
 namespace CaDesk.Core;
-public enum WorkStatus { NotStarted, InProgress, Completed }
+
+public enum WorkStatus
+{
+    NotStarted, InProgress, Completed
+}
 public sealed record Client(long Id, string Name, string Description, DateTime CreatedAt);
 public sealed record WorkArea(long Id, long ClientId, string Name, WorkStatus Status, DateOnly? Deadline, string Notes, DateTime CreatedAt, DateTime UpdatedAt);
 public sealed record WorkRow(WorkArea Work, Client Client)
@@ -14,5 +18,12 @@ public sealed record WorkRow(WorkArea Work, Client Client)
 }
 public sealed record Snapshot(IReadOnlyList<Client> Clients, IReadOnlyList<WorkArea> WorkAreas)
 {
-    public IReadOnlyList<WorkRow> Rows { get { var map=Clients.ToDictionary(c=>c.Id); return WorkAreas.Select(w=>new WorkRow(w,map[w.ClientId])).ToArray(); } }
+    public IReadOnlyList<WorkRow> Rows
+    {
+        get
+        {
+            var map = Clients.ToDictionary(c => c.Id);
+            return WorkAreas.Select(w => new WorkRow(w, map[w.ClientId])).ToArray();
+        }
+    }
 }
