@@ -1,7 +1,7 @@
 param([string]$Version = "1.0.0")
 $ErrorActionPreference = "Stop"
 if ($Version -notmatch '^\d+\.\d+\.\d+$') { throw "Use a semantic version such as 1.0.0." }
-if (-not $IsWindows) { throw "Packaging and executable verification must run on Windows." }
+if ($env:OS -ne 'Windows_NT') { throw "Packaging and executable verification must run on Windows." }
 $root = Split-Path $PSScriptRoot -Parent
 Set-Location $root
 [xml]$props = Get-Content Directory.Build.props
@@ -9,7 +9,7 @@ if ($props.Project.PropertyGroup.Version -ne $Version) { throw "Update Directory
 $destination = Join-Path $root "artifacts/CA-Desk-v$Version-win-x64"
 dotnet publish src/CaDesk.Desktop -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -p:Version=$Version -o $destination
 if ($LASTEXITCODE -ne 0) { throw "Publish failed." }
-Copy-Item docs/READ-ME-FIRST.txt $destination
+(Get-Content docs/READ-ME-FIRST.txt -Raw).Replace("1.0.0", $Version) | Set-Content "$destination/READ-ME-FIRST.txt" -Encoding utf8
 Copy-Item docs/THIRD-PARTY-NOTICES.md $destination
 $checks = Join-Path $root "artifacts/package-checks-$([Guid]::NewGuid().ToString('N'))"
 $process = Start-Process -FilePath "$destination/CA-Desk.exe" -ArgumentList @("--verify-install", "`"$checks`"") -PassThru
