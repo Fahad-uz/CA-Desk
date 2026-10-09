@@ -2,11 +2,13 @@ name: Windows build and tests
 on:
   push:
     branches: [main]
-    tags: ['v*']
   pull_request:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: windows-ci-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   windows:
     runs-on: windows-latest
@@ -28,15 +30,20 @@ jobs:
         with:
           name: windows-interface-checks
           path: artifacts/windows-checks
-      - name: Publish portable Windows app
-        run: dotnet publish src/CaDesk.Desktop -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -o artifacts/CA-Desk
-      - name: Package
+      - name: Build and launch the self-contained package
         shell: pwsh
-        run: Compress-Archive -Path artifacts/CA-Desk/* -DestinationPath artifacts/CA-Desk-win-x64.zip
+        run: |
+          [xml]$props = Get-Content Directory.Build.props
+          ./scripts/Publish.ps1 -Version $props.Project.PropertyGroup.Version
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: packaged-executable-checks
+          path: artifacts/package-verification
       - uses: actions/upload-artifact@v4
         with:
           name: CA-Desk-win-x64
-          path: artifacts/CA-Desk-win-x64.zip
+          path: artifacts/CA-Desk-v*-win-x64.zip
       - uses: actions/upload-artifact@v4
         if: always()
         with:

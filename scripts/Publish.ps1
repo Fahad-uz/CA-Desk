@@ -14,9 +14,9 @@ Copy-Item docs/THIRD-PARTY-NOTICES.md $destination
 $checks = Join-Path $root "artifacts/package-checks-$([Guid]::NewGuid().ToString('N'))"
 $process = Start-Process -FilePath "$destination/CA-Desk.exe" -ArgumentList @("--verify-install", "`"$checks`"") -PassThru
 if (-not $process.WaitForExit(45000)) { Stop-Process -Id $process.Id; throw "Packaged app did not finish its launch check." }
+Copy-Item $checks "artifacts/package-verification" -Recurse -Force
 if ($process.ExitCode -ne 0 -or -not (Test-Path "$checks/result.txt")) { throw "Packaged executable check failed. Inspect $checks." }
 Get-Content "$checks/result.txt"
-Copy-Item $checks "artifacts/package-verification" -Recurse -Force
 # Verification databases stay in CI scratch space and never enter the distribution.
 $zip = Join-Path $root "artifacts/CA-Desk-v$Version-win-x64.zip"
 if (Test-Path $zip) { Remove-Item $zip }
