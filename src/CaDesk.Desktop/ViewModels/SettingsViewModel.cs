@@ -17,7 +17,7 @@ public sealed class SettingsViewModel(ShellViewModel shell) : Observable
         IsBusy = true; Message = "Creating and checking your backup…";
         try { await shell.Store.ExportBackupAsync(path); Message = $"Backup saved: {path}"; }
         catch (Exception ex) { Message = ex is ValidationException ? ex.Message : "Backup could not be saved. Choose a writable folder with free space."; }
-        finally { IsBusy = false; }
+        finally { IsBusy = false; shell.IsBusy = false; }
     }
     public async Task RestoreAsync(string path)
     {
@@ -28,12 +28,12 @@ public sealed class SettingsViewModel(ShellViewModel shell) : Observable
             await shell.Store.ValidateBackupAsync(path);
             if (!shell.Dialogs.Confirm("Restore backup?", "This replaces all current clients, work areas, study notes and preferences with the selected backup. A verified copy of your current data will be saved first. Continue?"))
             { Message = "Restore cancelled. Your current data is kept."; return; }
-            Message = "Restoring your data…";
+            Message = "Restoring your data…"; shell.IsBusy = true;
             await shell.Store.RestoreBackupAsync(path);
             shell.ApplyPreferences(); shell.Refresh();
             Message = "Backup restored and verified. Your previous data is kept in the backups folder.";
         }
         catch (Exception ex) { Message = ex is ValidationException or RecoveryException ? ex.Message : "Restore could not be completed. Your previous database and recovery backups are kept."; }
-        finally { IsBusy = false; }
+        finally { IsBusy = false; shell.IsBusy = false; }
     }
 }

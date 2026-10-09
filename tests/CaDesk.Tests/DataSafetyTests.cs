@@ -45,22 +45,37 @@ public sealed class DataSafetyTests : IDisposable
         r.SaveClient(null, "New client", "");
         Assert.Equal(2, paths.OpenRepository().Load().Clients.Count);
     }
-    [Fact]
-    public void FailedMigrationRollsBackAndProvidesRecoverableBackup()
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void FailedMigrationRollsBackAndProvidesRecoverableBackup(int schema)
     {
         var path = Path.Combine(folder, "current.db"); CreateLegacy(path);
         using (var db = new SqliteConnection($"Data Source={path};Pooling=False"))
         {
-            db.Open(); using var cmd = db.CreateCommand(); cmd.CommandText = "CREATE TABLE study_notes(collision TEXT)"; cmd.ExecuteNonQuery();
+            db.Open(); using var cmd = db.CreateCommand(); cmd.CommandText = (schema == 2 ? "ALTER TABLE clients ADD COLUMN due_date TEXT; PRAGMA user_version=2; " : "") + "CREATE TABLE study_notes(collision TEXT)"; cmd.ExecuteNonQuery();
         }
         var error = Assert.Throws<RecoveryException>(() => New());
-        Assert.Equal(1, DatabaseSafety.Validate(path));
-        Assert.Equal(1, DatabaseSafety.Validate(error.BackupPath));
+        Assert.Equal(schema, DatabaseSafety.Validate(path));
+        Assert.Equal(schema, DatabaseSafety.Validate(error.BackupPath));
         DatabaseSafety.Recover(error.BackupPath, path);
-        Assert.Equal(1, DatabaseSafety.Validate(path));
+        Assert.Equal(schema, DatabaseSafety.Validate(path));
         using var verify = new SqliteConnection($"Data Source={path};Pooling=False"); verify.Open();
         using var columns = verify.CreateCommand(); columns.CommandText = "SELECT count(*) FROM pragma_table_info('clients') WHERE name='due_date'";
-        Assert.Equal(0L, columns.ExecuteScalar());
+        Assert.Equal(schema == 1 ? 0L : 1L, columns.ExecuteScalar());
+    }
+    [Fact]
+    public void SchemaTwoUpgradeRetainsExistingDueDates()
+    {
+        var path = Path.Combine(folder, "current.db"); CreateLegacy(path);
+        using (var db = new SqliteConnection($"Data Source={path};Pooling=False"))
+        {
+            db.Open(); using var cmd = db.CreateCommand();
+            cmd.CommandText = "ALTER TABLE clients ADD COLUMN due_date TEXT; UPDATE clients SET due_date='2027-02-15'; PRAGMA user_version=2"; cmd.ExecuteNonQuery();
+        }
+        var r = New(); Assert.Equal(new DateOnly(2027, 2, 15), Assert.Single(r.Load().Clients).DueDate);
+        Assert.Equal(2, DatabaseSafety.Validate(Assert.Single(Directory.GetFiles(r.BackupDirectory, "*pre-migration*.db"))));
+        Assert.Empty(r.Load().Notes);
     }
     [Fact]
     public void NewerDatabaseIsRejectedWithoutMutation()

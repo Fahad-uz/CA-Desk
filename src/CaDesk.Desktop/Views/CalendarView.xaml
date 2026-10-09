@@ -6,23 +6,23 @@
       <RowDefinition Height="Auto"/>
       <RowDefinition Height="*"/>
     </Grid.RowDefinitions>
-    <DockPanel Margin="0,0,0,24">
-      <StackPanel>
-        <TextBlock Text="Calendar" Style="{StaticResource PageTitle}"/>
-        <TextBlock Text="Work deadlines and personal study, clearly mapped out." Style="{StaticResource Caption}" Margin="0,8,0,0"/>
-      </StackPanel>
-      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
-      <ComboBox ItemsSource="{x:Static vm:CalendarViewModel.DisplayOptions}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding DisplayFilter}" Width="188" Margin="0,0,10,0" AutomationProperties.Name="Calendar event filter"/>
-      <ComboBox ItemsSource="{Binding ClientOptions}" DisplayMemberPath="Label" SelectedItem="{Binding SelectedClient}" Width="180" HorizontalAlignment="Right" VerticalAlignment="Top" AutomationProperties.Name="Calendar client filter"/>
-      </StackPanel>
-    </DockPanel>
+    <StackPanel Margin="0,0,0,22">
+      <TextBlock Text="Calendar" Style="{StaticResource PageTitle}"/>
+      <TextBlock Text="Work deadlines and personal study, clearly mapped out." Style="{StaticResource Caption}" Margin="0,8,0,16"/>
+      <WrapPanel>
+        <ComboBox ItemsSource="{x:Static vm:CalendarViewModel.DisplayOptions}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding DisplayFilter}" Width="200" Margin="0,0,10,6" AutomationProperties.Name="Calendar event filter"/>
+        <ComboBox ItemsSource="{Binding ClientOptions}" DisplayMemberPath="Label" SelectedItem="{Binding SelectedClient}" Width="200" Margin="0,0,20,6" AutomationProperties.Name="Calendar client filter"/>
+        <TextBlock Text="●  Study notes" Foreground="#8B5CF6" FontSize="11" VerticalAlignment="Center" Margin="0,0,16,6"/>
+        <TextBlock Text="●  Work deadlines" Foreground="#64748B" FontSize="11" VerticalAlignment="Center" Margin="0,0,0,6"/>
+      </WrapPanel>
+    </StackPanel>
     <Grid Grid.Row="1" Margin="0,0,0,18">
       <Grid.ColumnDefinitions>
         <ColumnDefinition Width="*"/>
         <ColumnDefinition Width="Auto"/>
       </Grid.ColumnDefinitions>
       <StackPanel>
-        <TextBlock Text="{Binding Title}" FontSize="21" FontWeight="SemiBold"/>
+        <TextBlock Text="{Binding Title}" FontSize="21" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding Title}"/>
         <TextBlock Text="{Binding ResultLabel}" Style="{StaticResource Caption}" FontSize="12" Margin="0,5,0,0"/>
       </StackPanel>
       <WrapPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center">
@@ -181,7 +181,8 @@
                           <Button Visibility="{Binding IsWork,Converter={StaticResource Visible}}" Command="{Binding OpenClientCommand}" Style="{StaticResource Link}">
                             <TextBlock Text="{Binding ClientName}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding ClientName}"/>
                           </Button>
-                          <Button Grid.Column="1" Command="{Binding OpenCommand}" Style="{StaticResource Link}" Foreground="{Binding Color}">
+                          <Button Command="{Binding OpenCommand}" Foreground="{Binding Color}">
+                            <Button.Style><Style TargetType="Button" BasedOn="{StaticResource Link}"><Setter Property="Grid.Column" Value="1"/><Style.Triggers><DataTrigger Binding="{Binding IsStudyNote}" Value="True"><Setter Property="Grid.Column" Value="0"/><Setter Property="Grid.ColumnSpan" Value="2"/></DataTrigger></Style.Triggers></Style></Button.Style>
                             <TextBlock Text="{Binding Name}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}"/>
                           </Button>
                           <TextBlock Grid.Column="2" Text="{Binding StatusLabel}" Foreground="{Binding Color}" VerticalAlignment="Center" FontSize="12"/>

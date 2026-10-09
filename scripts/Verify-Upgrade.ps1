@@ -9,7 +9,8 @@ Expand-Archive (Join-Path $oldRoot 'CA-Desk-v1.0.1-win-x64.zip') (Join-Path $old
 $exe = (Get-ChildItem (Join-Path $oldRoot 'app') -Recurse -Filter 'CA-Desk.exe' | Select-Object -First 1).FullName
 $oldDirectory = Split-Path $exe
 $oldCheck = Join-Path $fixtureRoot 'old-executable-check'
-$process = Start-Process $exe -ArgumentList "--verify-install `"$oldCheck`"" -Wait -PassThru
+$process = Start-Process $exe -ArgumentList "--verify-install `"$oldCheck`"" -PassThru
+if (-not $process.WaitForExit(45000)) { Stop-Process -Id $process.Id; throw 'Previous-release executable verification timed out.' }
 if ($process.ExitCode -ne 0) { throw 'Published v1.0.1 executable did not pass its isolated verification.' }
 $profile = Join-Path $fixtureRoot 'profile'
 dotnet run --project tests/CaDesk.UpgradeFixtureBuilder -c Release "-p:OldReleaseDirectory=$oldDirectory" -- $profile

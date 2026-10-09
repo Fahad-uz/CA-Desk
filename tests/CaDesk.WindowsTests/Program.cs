@@ -419,6 +419,16 @@ internal static class Program
             shell.Calendar.DisplayFilter = CalendarDisplayFilter.Everything; shell.Calendar.ClientFilter = store.Snapshot.Clients.First(c => c.Id != cid).Id;
             Check(shell.Calendar.Days.Sum(d => d.Items.Count) == 2, $"{mode} client filter keeps personal study notes visible"); shell.Calendar.ClientFilter = null;
         }
+        var colorWork = store.Snapshot.WorkAreas[0];
+        foreach (var (status, color) in new[] { (WorkStatus.NotStarted, "#64748B"), (WorkStatus.InProgress, "#2563EB"), (WorkStatus.Completed, "#16A34A") })
+        {
+            await store.UpdateDeadlineAsync(colorWork.Id, today.AddDays(1)); await store.UpdateStatusAsync(colorWork.Id, status);
+            shell.Calendar.DisplayFilter = CalendarDisplayFilter.ClientDeadlines; shell.Calendar.ShowDay(today.AddDays(1));
+            Check(shell.Calendar.Days.Single().Items.Single(e => e.Id == colorWork.Id).Color == color, $"Calendar retains the {status} work colour");
+        }
+        await store.UpdateStatusAsync(colorWork.Id, WorkStatus.NotStarted); await store.UpdateDeadlineAsync(colorWork.Id, today.AddDays(-1)); shell.Calendar.ShowDay(today.AddDays(-1));
+        Check(shell.Calendar.Days.Single().Items.Single(e => e.Id == colorWork.Id).Color == "#DC2626", "Calendar keeps unfinished overdue deadlines red");
+        await store.UpdateStatusAsync(colorWork.Id, colorWork.Status); await store.UpdateDeadlineAsync(colorWork.Id, colorWork.Deadline); shell.Calendar.Date = DateTime.Today;
         shell.Calendar.DisplayFilter = CalendarDisplayFilter.StudyNotes; shell.Calendar.Mode = CalendarMode.Day;
         var entry = shell.Calendar.Days.Single().Items.First(e => e.Name.Contains("44AB")); entry.OpenCommand.Execute(null);
         Check(dialogs.LastNote?.Heading == vm.Heading, "Clicking a calendar note opens the corresponding full study note");
