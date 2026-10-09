@@ -15,16 +15,16 @@ public partial class MainWindow : Window
     }
     private readonly DispatcherTimer dayTimer;
     private DateTime lastDate = DateTime.Today;
-    public MainWindow() : this(new ApplicationStore(new Repository(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CA Desk", "ca-desk.db")))) { }
+    public MainWindow() : this(new ApplicationStore(AppDataPaths.Current.OpenRepository())) { }
     public MainWindow(ApplicationStore store, bool loadOnOpen = true)
     {
         InitializeComponent();
         Shell = new(store);
         DataContext = Shell;
         Shell.Dialogs = new DialogService(Shell, this);
-        Loaded += async (_, _) => { if (loadOnOpen) { Shell.IsBusy = true; await Shell.RunAsync(() => store.ReloadAsync()); Shell.IsBusy = false; } else Shell.Refresh(); };
+        Loaded += async (_, _) => { if (loadOnOpen) { Shell.IsBusy = true; await Shell.RunAsync(() => store.ReloadAsync()); await Shell.RunAsync(() => store.BackupIfDueAsync()); Shell.IsBusy = false; } else Shell.Refresh(); };
         dayTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
-        dayTimer.Tick += (_, _) => { if (DateTime.Today != lastDate) { lastDate = DateTime.Today; Shell.Refresh(); } };
+        dayTimer.Tick += async (_, _) => { if (DateTime.Today != lastDate) { lastDate = DateTime.Today; Shell.Refresh(); await Shell.RunAsync(() => store.BackupIfDueAsync()); } };
         dayTimer.Start();
         Closed += (_, _) => dayTimer.Stop();
         StateChanged += (_, _) => UpdateCaption();

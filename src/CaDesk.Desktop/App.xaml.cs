@@ -28,7 +28,25 @@ public partial class App : Application
             MainWindow = new MainWindow();
             MainWindow.Show();
         }
-        catch (Exception ex) { MessageBox.Show(ex is Core.ValidationException ? ex.Message : "CA Desk could not open its local database. Check that your Windows user data folder is writable and has free space. Existing data has not been reset.", "CA Desk", MessageBoxButton.OK, MessageBoxImage.Error); Shutdown(1); }
+        catch (Core.RecoveryException ex)
+        {
+            if (MessageBox.Show(ex.Message + "\n\nA recovery copy is saved at:\n" + ex.BackupPath, "Database update stopped", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) == MessageBoxResult.Yes)
+            {
+                try
+                {
+                    Core.DatabaseSafety.Recover(ex.BackupPath, Core.AppDataPaths.Current.DatabasePath);
+                    MessageBox.Show("Your previous database has been restored. Close CA Desk and use a compatible previous release, or a corrected update. The recovery backup has been kept.", "Recovery complete");
+                }
+                catch { MessageBox.Show("Recovery could not finish. Your verified backup is kept at:\n" + ex.BackupPath, "CA Desk"); }
+            }
+            Shutdown(1);
+        }
+        catch (Exception ex)
+        {
+            var explanation = ex is Core.ValidationException ? ex.Message : "CA Desk could not open its local database. Check that your Windows user data folder is writable and has free space. Existing data has not been reset.";
+            MessageBox.Show(explanation + "\n\nYour data remains in " + Core.AppDataPaths.Current.DatabasePath + "\nRecovery copies: " + Core.AppDataPaths.Current.BackupDirectory, "CA Desk", MessageBoxButton.OK, MessageBoxImage.Error);
+            Shutdown(1);
+        }
     }
     protected override void OnExit(ExitEventArgs e)
     {

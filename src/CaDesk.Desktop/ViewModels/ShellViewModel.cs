@@ -5,6 +5,7 @@ namespace CaDesk.Desktop.ViewModels;
 public interface IDialogService
 {
     void EditClient(Client? client);
+    void EditNote(StudyNote? note);
     void EditWork(WorkRow? work, long? clientId = null);
     bool Confirm(string title, string description);
 }
@@ -35,6 +36,9 @@ public sealed class ShellViewModel : Observable
     {
         get;
     }
+    public NotesViewModel Notes { get; }
+    public ICommand AddNoteCommand { get; }
+    public ICommand NewItemCommand { get; }
     private object currentPage = null!;
     public object CurrentPage
     {
@@ -84,10 +88,13 @@ public sealed class ShellViewModel : Observable
         Clients = new(this);
         Master = new(this);
         Calendar = new(this);
-        Settings = new(store.Repository.DatabasePath);
+        Notes = new(this);
+        AddNoteCommand = new RelayCommand(_ => Dialogs.EditNote(null));
+        Settings = new(this);
         CurrentPage = Dashboard;
         NavigateCommand = new RelayCommand(p => Navigate(p?.ToString() ?? "Dashboard"));
         AddClientCommand = new RelayCommand(_ => Dialogs.EditClient(null));
+        NewItemCommand = new RelayCommand(_ => { if (Section == "Notes") AddNoteCommand.Execute(null); else AddClientCommand.Execute(null); });
         DismissMessageCommand = new RelayCommand(_ => Message = "");
         RefreshCommand = new AsyncCommand(async () => await Store.ReloadAsync(), ReportError);
         store.Changed += (_, _) => Refresh();
@@ -101,6 +108,7 @@ public sealed class ShellViewModel : Observable
             "Calendar" => Calendar,
             "Master Work Table" => Master,
             "Settings" => Settings,
+            "Notes" => Notes,
             _ => Dashboard
         };
         Refresh();
@@ -119,6 +127,16 @@ public sealed class ShellViewModel : Observable
         if (row != null)
             Dialogs.EditWork(row);
     }
+    public void OpenNote(long id)
+    {
+        var note = Store.Snapshot.Notes.FirstOrDefault(n => n.Id == id);
+        if (note != null) Dialogs.EditNote(note);
+    }
+    public async Task DeleteNoteAsync(StudyNote note)
+    {
+        if (Dialogs.Confirm("Delete study note?", $"Delete {note.Heading}? This cannot be undone."))
+            await RunAsync(() => Store.DeleteNoteAsync(note.Id));
+    }
     public void FilterMaster(WorkStatus? status = null, DeadlineFilter deadline = DeadlineFilter.All)
     {
         Master.ApplyFilter(status, deadline);
@@ -126,10 +144,12 @@ public sealed class ShellViewModel : Observable
     }
     public void Refresh()
     {
+        if (!preferencesReady) ApplyPreferences();
         Dashboard.Refresh();
         Clients.Refresh();
         Master.Refresh();
         Calendar.Refresh();
+        Notes.Refresh();
         if (CurrentPage is WorkTableViewModel table && table != Master)
         {
             if (!Store.Snapshot.Clients.Any(c => c.Id == table.FixedClientId))
@@ -140,6 +160,24 @@ public sealed class ShellViewModel : Observable
             table.Refresh();
         }
         Raise(nameof(TodayLabel));
+    }
+    private bool preferencesReady, applyingPreferences;
+    public void ApplyPreferences()
+    {
+        applyingPreferences = true;
+        try
+        {
+            var p = Store.Snapshot.Preferences;
+            Calendar.Mode = p.TryGetValue("calendar.mode", out var mode) && Enum.TryParse<CalendarMode>(mode, out var m) && Enum.IsDefined(m) ? m : CalendarMode.Month;
+            Calendar.DisplayFilter = p.TryGetValue("calendar.display", out var display) && Enum.TryParse<CalendarDisplayFilter>(display, out var d) && Enum.IsDefined(d) ? d : CalendarDisplayFilter.Everything;
+            Clients.TableView = p.TryGetValue("clients.table", out var table) && bool.TryParse(table, out var t) && t;
+            preferencesReady = true;
+        }
+        finally { applyingPreferences = false; }
+    }
+    public void PersistPreference(string key, string value)
+    {
+        if (preferencesReady && !applyingPreferences) _ = RunAsync(() => Store.SavePreferenceAsync(key, value));
     }
     public void ReportError(Exception ex) => Message = ex is ValidationException ? ex.Message : "Your change could not be saved. Check that the local data folder is writable and has free space, then try again. Your previously saved data is kept.";
     public async Task RunAsync(Func<Task> action)
@@ -160,9 +198,4 @@ public sealed class ShellViewModel : Observable
         if (Dialogs.Confirm("Delete work area?", $"Delete {w.Name} for {w.ClientName}? This cannot be undone."))
             await RunAsync(() => Store.DeleteWorkAsync(w.Id));
     }
-}
-public sealed class SettingsViewModel(string databasePath)
-{
-    public string DatabasePath { get; } = databasePath;
-    public string Version => typeof(App).Assembly.GetName().Version?.ToString(3) ?? "1.0.0";
 }

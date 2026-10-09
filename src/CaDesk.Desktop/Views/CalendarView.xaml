@@ -9,9 +9,12 @@
     <DockPanel Margin="0,0,0,24">
       <StackPanel>
         <TextBlock Text="Calendar" Style="{StaticResource PageTitle}"/>
-        <TextBlock Text="Your deadlines, clearly mapped out." Style="{StaticResource Caption}" Margin="0,8,0,0"/>
+        <TextBlock Text="Work deadlines and personal study, clearly mapped out." Style="{StaticResource Caption}" Margin="0,8,0,0"/>
       </StackPanel>
-      <ComboBox ItemsSource="{Binding ClientOptions}" DisplayMemberPath="Label" SelectedItem="{Binding SelectedClient}" Width="220" HorizontalAlignment="Right" VerticalAlignment="Top" AutomationProperties.Name="Calendar client filter"/>
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+      <ComboBox ItemsSource="{x:Static vm:CalendarViewModel.DisplayOptions}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding DisplayFilter}" Width="188" Margin="0,0,10,0" AutomationProperties.Name="Calendar event filter"/>
+      <ComboBox ItemsSource="{Binding ClientOptions}" DisplayMemberPath="Label" SelectedItem="{Binding SelectedClient}" Width="180" HorizontalAlignment="Right" VerticalAlignment="Top" AutomationProperties.Name="Calendar client filter"/>
+      </StackPanel>
     </DockPanel>
     <Grid Grid.Row="1" Margin="0,0,0,18">
       <Grid.ColumnDefinitions>
@@ -102,7 +105,7 @@
                     </Style>
                   </Border.Style>
                   <StackPanel>
-                    <Button Content="{Binding Label}" Command="{Binding OpenDayCommand}" Padding="5,1" HorizontalAlignment="Left" Margin="0,0,0,6" ToolTip="Show all deadlines for this day">
+                    <Button Content="{Binding Label}" Command="{Binding OpenDayCommand}" Padding="5,1" HorizontalAlignment="Left" Margin="0,0,0,6" ToolTip="Show all events for this day">
                       <Button.Style>
                         <Style TargetType="Button" BasedOn="{StaticResource Link}">
                           <Setter Property="Foreground" Value="#64748B"/>
@@ -123,10 +126,10 @@
                         <DataTemplate>
                           <Button Command="{Binding OpenCommand}" Background="Transparent" BorderBrush="Transparent" Padding="3,3" HorizontalContentAlignment="Stretch" ToolTip="{Binding CalendarLabel}">
                             <DockPanel>
-                              <Border DockPanel.Dock="Left" Width="3" Background="{Binding Status,Converter={StaticResource StatusBrush}}" CornerRadius="1" Margin="0,1,6,1"/>
+                              <Border DockPanel.Dock="Left" Width="3" Background="{Binding Color}" CornerRadius="1" Margin="0,1,6,1"/>
                               <StackPanel>
-                                <TextBlock Text="{Binding Name}" FontSize="10" FontWeight="SemiBold" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Foreground="{Binding Status,Converter={StaticResource StatusBrush}}"/>
-                                <TextBlock Text="{Binding ClientName}" FontSize="9" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis">
+                                <TextBlock Text="{Binding Name}" FontSize="10" FontWeight="SemiBold" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Foreground="{Binding Color}"/>
+                                <TextBlock Visibility="{Binding IsWork,Converter={StaticResource Visible}}" Text="{Binding ClientName}" FontSize="9" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis">
                                   <TextBlock.Style>
                                     <Style TargetType="TextBlock">
                                       <Setter Property="Foreground" Value="#64748B"/>
@@ -171,17 +174,17 @@
                           <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="1.3*"/>
-                            <ColumnDefinition Width="120"/>
-                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="105"/>
+                            <ColumnDefinition Width="105"/>
                             <ColumnDefinition Width="70"/>
                           </Grid.ColumnDefinitions>
-                          <Button Command="{Binding OpenClientCommand}" Style="{StaticResource Link}">
+                          <Button Visibility="{Binding IsWork,Converter={StaticResource Visible}}" Command="{Binding OpenClientCommand}" Style="{StaticResource Link}">
                             <TextBlock Text="{Binding ClientName}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding ClientName}"/>
                           </Button>
-                          <Button Grid.Column="1" Command="{Binding OpenCommand}" Style="{StaticResource Link}" Foreground="#0F172A">
+                          <Button Grid.Column="1" Command="{Binding OpenCommand}" Style="{StaticResource Link}" Foreground="{Binding Color}">
                             <TextBlock Text="{Binding Name}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}"/>
                           </Button>
-                          <TextBlock Grid.Column="2" Text="{Binding StatusLabel}" Foreground="{Binding Status,Converter={StaticResource StatusBrush}}" VerticalAlignment="Center" FontSize="12"/>
+                          <TextBlock Grid.Column="2" Text="{Binding StatusLabel}" Foreground="{Binding Color}" VerticalAlignment="Center" FontSize="12"/>
                           <TextBlock Grid.Column="3" Text="{Binding DeadlineLabel}" VerticalAlignment="Center" FontSize="12">
                             <TextBlock.Style>
                               <Style TargetType="TextBlock">
@@ -200,7 +203,7 @@
                     </DataTemplate>
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>
-                <TextBlock Text="No deadlines for this day." Style="{StaticResource Caption}" Margin="0,8" Visibility="{Binding IsEmpty,Converter={StaticResource Visible}}"/>
+                <TextBlock Text="No events for this day." Style="{StaticResource Caption}" Margin="0,8" Visibility="{Binding IsEmpty,Converter={StaticResource Visible}}"/>
               </StackPanel>
             </Border>
           </DataTemplate>

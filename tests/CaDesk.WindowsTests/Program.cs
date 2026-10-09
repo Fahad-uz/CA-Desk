@@ -366,6 +366,8 @@ internal static class Program
             get; private set;
         }
         public bool AllowDelete { get; set; } = true;
+        public void EditNote(StudyNote? note) { LastNote = note; }
+        public StudyNote? LastNote { get; private set; }
         public void EditClient(Client? client)
         {
         }

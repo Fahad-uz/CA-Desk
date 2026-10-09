@@ -23,6 +23,19 @@
           <TextBlock Text="Application updates keep this database. The portable app can be replaced without moving or resetting your data." TextWrapping="Wrap" Style="{StaticResource Caption}" Margin="0,16,0,0"/>
         </StackPanel>
       </Border>
+      <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+        <StackPanel>
+          <TextBlock Text="Backup &amp; Restore" Style="{StaticResource SectionTitle}"/>
+          <TextBlock Text="Keep a complete copy of your clients, work areas, study notes and preferences. Daily automatic backups and pre-update recovery copies are saved locally." Style="{StaticResource Caption}" TextWrapping="Wrap"/>
+          <WrapPanel Margin="0,20,0,14" IsEnabled="{Binding CanUse}">
+            <Button Content="Export Backup" Click="ExportBackup" Style="{StaticResource Primary}" Margin="0,0,10,8"/>
+            <Button Content="Restore Backup" Click="RestoreBackup" Margin="0,0,10,8"/>
+            <Button Content="Open backups folder" Click="OpenBackups" Margin="0,0,0,8"/>
+          </WrapPanel>
+          <TextBlock Text="{Binding Message}" TextWrapping="Wrap" Foreground="#2563EB" FontSize="12"/>
+          <TextBlock Text="Restore replaces your current data after confirmation. Keep an exported copy on another drive for protection from computer or disk failure." Style="{StaticResource Caption}" TextWrapping="Wrap" FontSize="11" Margin="0,12,0,0"/>
+        </StackPanel>
+      </Border>
       <Border Style="{StaticResource Card}">
         <StackPanel>
           <TextBlock Text="Appearance" Style="{StaticResource SectionTitle}"/>

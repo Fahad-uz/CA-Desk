@@ -6,6 +6,39 @@ public enum CalendarMode
 {
     Month, Week, Day
 }
+public enum CalendarDisplayFilter { Everything, ClientDeadlines, StudyNotes }
+public sealed record CalendarDisplayOption(CalendarDisplayFilter Value, string Label);
+public sealed class CalendarEventViewModel
+{
+    public long Id { get; }
+    public bool IsStudyNote { get; }
+    public bool IsWork => !IsStudyNote;
+    public string Name { get; }
+    public string ClientName { get; } = "";
+    public string StatusLabel { get; } = "";
+    public string DeadlineLabel { get; } = "";
+    public string CalendarLabel { get; }
+    public DateOnly EventDate { get; }
+    public bool IsOverdue { get; }
+    public string Color { get; }
+    public ICommand OpenCommand { get; }
+    public ICommand OpenClientCommand { get; }
+    public CalendarEventViewModel(WorkRow row, ShellViewModel shell)
+    {
+        Id = row.Id; Name = row.Name; ClientName = row.ClientName; StatusLabel = Options.StatusName(row.Status);
+        EventDate = row.Deadline!.Value; DeadlineLabel = EventDate.ToString("d MMM yyyy");
+        IsOverdue = row.IsOverdue(DateOnly.FromDateTime(DateTime.Today));
+        Color = IsOverdue ? "#DC2626" : row.Status switch { WorkStatus.Completed => "#16A34A", WorkStatus.InProgress => "#2563EB", _ => "#64748B" };
+        CalendarLabel = $"{Name} · {ClientName} · {StatusLabel}{(IsOverdue ? " · Overdue" : "")}";
+        OpenCommand = new RelayCommand(_ => shell.OpenWork(Id));
+        OpenClientCommand = new RelayCommand(_ => shell.OpenClient(row.Client.Id));
+    }
+    public CalendarEventViewModel(StudyNote note, ShellViewModel shell)
+    {
+        Id = note.Id; Name = CalendarLabel = note.Heading; EventDate = note.NoteDate; IsStudyNote = true; Color = "#8B5CF6";
+        OpenCommand = new RelayCommand(_ => shell.OpenNote(Id)); OpenClientCommand = OpenCommand;
+    }
+}
 public sealed class CalendarDay
 {
     public DateOnly Date
@@ -23,7 +56,7 @@ public sealed class CalendarDay
     {
         get;
     }
-    public IReadOnlyList<WorkItemViewModel> Items
+    public IReadOnlyList<CalendarEventViewModel> Items
     {
         get;
     }
@@ -38,14 +71,14 @@ public sealed class CalendarDay
     {
         get;
     }
-    public CalendarDay(DateOnly date, DateOnly selected, IEnumerable<WorkRow> works, CalendarViewModel calendar, ShellViewModel shell, bool limit)
+    public CalendarDay(DateOnly date, DateOnly selected, IEnumerable<CalendarEventViewModel> events, CalendarViewModel calendar, ShellViewModel shell, bool limit)
     {
         Date = date;
         IsCurrentMonth = date.Month == selected.Month;
-        var rows = works.OrderBy(w => w.Status).ThenBy(w => w.Name).ToArray();
-        Items = (limit ? rows.Take(3) : rows).Select(w => new WorkItemViewModel(w, shell)).ToArray();
+        var rows = events.OrderBy(e => e.IsStudyNote).ThenBy(e => e.Name, StringComparer.OrdinalIgnoreCase).ThenBy(e => e.Id).ToArray();
+        Items = (limit ? rows.Take(3) : rows).ToArray();
         ExtraCount = limit ? Math.Max(0, rows.Length - 3) : 0;
-        HasOverdue = rows.Any(w => w.IsOverdue(DateOnly.FromDateTime(DateTime.Today)));
+        HasOverdue = rows.Any(w => w.IsOverdue);
         OpenDayCommand = new RelayCommand(_ => calendar.ShowDay(Date));
     }
 }
@@ -57,12 +90,14 @@ public sealed class CalendarViewModel : Observable
     {
         get => mode; set
         {
-            if (Set(ref mode, value))
-                Refresh();
+            if (Set(ref mode, value)) { shell.PersistPreference("calendar.mode", value.ToString()); Refresh(); }
         }
     }
     public bool IsMonth => Mode == CalendarMode.Month;
     public bool IsAgenda => !IsMonth;
+    public static IReadOnlyList<CalendarDisplayOption> DisplayOptions { get; } = [new(CalendarDisplayFilter.Everything, "Show Everything"), new(CalendarDisplayFilter.ClientDeadlines, "Client Deadlines Only"), new(CalendarDisplayFilter.StudyNotes, "Study Notes Only")];
+    private CalendarDisplayFilter displayFilter;
+    public CalendarDisplayFilter DisplayFilter { get => displayFilter; set { if (Set(ref displayFilter, value)) { shell.PersistPreference("calendar.display", value.ToString()); Refresh(); } } }
     private DateTime date = DateTime.Today;
     public DateTime Date
     {
@@ -88,7 +123,7 @@ public sealed class CalendarViewModel : Observable
     public IReadOnlyList<ClientOption> ClientOptions { get; private set; } = [];
     public IReadOnlyList<CalendarDay> Days { get; private set; } = [];
     public string Title => Mode switch { CalendarMode.Month => Date.ToString("MMMM yyyy"), CalendarMode.Week => $"Week of {WorkQueries.WeekStart(DateOnly.FromDateTime(Date)):d MMM yyyy}", _ => Date.ToString("dddd, d MMMM yyyy") };
-    public string ResultLabel => $"{Days.Sum(d => d.Items.Count + d.ExtraCount)} deadlines in view";
+    public string ResultLabel => $"{Days.Sum(d => d.Items.Count + d.ExtraCount)} events in view";
     public ICommand PreviousCommand
     {
         get;
@@ -118,6 +153,7 @@ public sealed class CalendarViewModel : Observable
     {
         date = day.ToDateTime(TimeOnly.MinValue);
         mode = CalendarMode.Day;
+        shell.PersistPreference("calendar.mode", mode.ToString());
         Raise(nameof(Date));
         Raise(nameof(Mode));
         Refresh();
@@ -148,7 +184,12 @@ public sealed class CalendarViewModel : Observable
             CalendarMode.Week => 7,
             _ => 1
         };
-        var grouped = shell.Store.Snapshot.Rows.Where(w => w.Deadline != null && (client == null || w.Client.Id == client)).ToLookup(w => w.Deadline!.Value);
+        IEnumerable<CalendarEventViewModel> events = [];
+        if (DisplayFilter != CalendarDisplayFilter.StudyNotes)
+            events = shell.Store.Snapshot.Rows.Where(w => w.Deadline != null && (client == null || w.Client.Id == client)).Select(w => new CalendarEventViewModel(w, shell));
+        if (DisplayFilter != CalendarDisplayFilter.ClientDeadlines)
+            events = events.Concat(shell.Store.Snapshot.Notes.Select(n => new CalendarEventViewModel(n, shell)));
+        var grouped = events.ToLookup(e => e.EventDate);
         Days = Enumerable.Range(0, count).Select(i => new CalendarDay(start.AddDays(i), selected, grouped[start.AddDays(i)], this, shell, IsMonth)).ToArray();
         foreach (var p in new[] { nameof(Days), nameof(Title), nameof(IsMonth), nameof(IsAgenda), nameof(ResultLabel), nameof(SelectedClient) })
             Raise(p);

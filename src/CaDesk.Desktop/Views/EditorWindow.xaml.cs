@@ -7,11 +7,19 @@ namespace CaDesk.Desktop.Views;
 
 public partial class EditorWindow : Window
 {
-    public EditorWindow(EditorViewModel vm)
+    public EditorWindow(EditorViewModel vm, Func<bool>? confirmDiscard = null)
     {
         InitializeComponent();
         DataContext = vm;
-        vm.Saved += (_, _) => Close();
+        var saved = false;
+        if (vm is NoteEditorViewModel) { Width = 760; Height = 820; MinWidth = 560; }
+        vm.Saved += (_, _) => { saved = true; Close(); };
+        Closing += (_, e) =>
+        {
+            if (vm.IsSaving) { e.Cancel = true; return; }
+            if (!saved && vm is NoteEditorViewModel { IsDirty: true })
+                e.Cancel = !(confirmDiscard?.Invoke() ?? MessageBox.Show(this, "Discard the changes to this study note?", "Unsaved changes", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.Yes);
+        };
         Loaded += (_, _) => { UpdateLayout(); var box = FindBox(this); if (box != null) { box.Focus(); Keyboard.Focus(box); box.SelectAll(); } };
     }
     private static TextBox? FindBox(DependencyObject parent)

@@ -34,7 +34,7 @@ public sealed class ClientsViewModel(ShellViewModel shell) : Observable
     {
         get => tableView; set
         {
-            Set(ref tableView, value);
+            if (Set(ref tableView, value)) shell.PersistPreference("clients.table", value.ToString());
             Raise(nameof(CardView));
         }
     }

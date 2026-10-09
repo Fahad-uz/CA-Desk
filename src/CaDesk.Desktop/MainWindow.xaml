@@ -58,6 +58,7 @@
     <DataTemplate DataType="{x:Type vm:CalendarViewModel}">
       <v:CalendarView/>
     </DataTemplate>
+    <DataTemplate DataType="{x:Type vm:NotesViewModel}"><v:NotesView/></DataTemplate>
     <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
       <v:SettingsView/>
     </DataTemplate>
@@ -76,7 +77,7 @@
     </Style>
   </Window.Resources>
   <Window.InputBindings>
-    <KeyBinding Key="N" Modifiers="Control" Command="{Binding AddClientCommand}"/>
+    <KeyBinding Key="N" Modifiers="Control" Command="{Binding NewItemCommand}"/>
     <KeyBinding Key="R" Modifiers="Control" Command="{Binding RefreshCommand}"/>
   </Window.InputBindings>
   <Grid>
@@ -226,7 +227,15 @@
       <Border BorderBrush="#E2E8F0" BorderThickness="0,0,0,1" Background="White" Padding="30,0">
         <DockPanel>
           <TextBlock Text="{Binding TodayLabel}" Style="{StaticResource Caption}" VerticalAlignment="Center"/>
-          <TextBlock Text="A little clarity. A better workday." Style="{StaticResource Caption}" VerticalAlignment="Center" HorizontalAlignment="Right" FontSize="12"/>
+          <Button x:Name="NotesNavigation" Command="{Binding NavigateCommand}" CommandParameter="Notes" HorizontalAlignment="Right" VerticalAlignment="Center" ToolTip="Personal study notes" AutomationProperties.Name="Notes">
+            <Button.Style>
+              <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                <Setter Property="Background" Value="#FAF5FF"/><Setter Property="BorderBrush" Value="#EDE9FE"/><Setter Property="Foreground" Value="#7C3AED"/>
+                <Style.Triggers><DataTrigger Binding="{Binding Section}" Value="Notes"><Setter Property="Background" Value="#EDE9FE"/><Setter Property="BorderBrush" Value="#C4B5FD"/></DataTrigger></Style.Triggers>
+              </Style>
+            </Button.Style>
+            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE82D;" FontFamily="Segoe MDL2 Assets" Foreground="#7C3AED" Margin="0,0,9,0" VerticalAlignment="Center"/><TextBlock Text="Notes" Foreground="#7C3AED" FontWeight="SemiBold"/></StackPanel>
+          </Button>
         </DockPanel>
       </Border>
       <Border Grid.Row="1" Margin="28,16,28,0" Background="#FEF2F2" CornerRadius="8" Padding="14" Visibility="{Binding HasMessage,Converter={StaticResource Visible}}">
