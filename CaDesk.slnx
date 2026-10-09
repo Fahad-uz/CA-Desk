@@ -3,4 +3,7 @@
     <Project Path="src/CaDesk.Core/CaDesk.Core.csproj" />
     <Project Path="src/CaDesk.Desktop/CaDesk.Desktop.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CaDesk.Tests/CaDesk.Tests.csproj" />
+  </Folder>
 </Solution>
