@@ -11,3 +11,4 @@
 TestResults/
 artifacts/
 .DS_Store
+*_wpftmp.csproj
