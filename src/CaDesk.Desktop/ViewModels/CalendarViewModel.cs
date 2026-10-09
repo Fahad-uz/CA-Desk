@@ -8,6 +8,7 @@ public sealed class CalendarDay
     public string Label=>Date.Day.ToString();
     public string FullLabel=>Date.ToString("ddd, d MMM");
     public bool IsToday=>Date==DateOnly.FromDateTime(DateTime.Today);
+    public bool HasOverdue {get;}
     public bool IsCurrentMonth {get;}
     public IReadOnlyList<WorkItemViewModel> Items {get;}
     public int ExtraCount {get;}
@@ -18,7 +19,7 @@ public sealed class CalendarDay
     public CalendarDay(DateOnly date,DateOnly selected,IEnumerable<WorkRow> works,CalendarViewModel calendar,ShellViewModel shell,bool limit)
     {
         Date=date;IsCurrentMonth=date.Month==selected.Month;var rows=works.OrderBy(w=>w.Status).ThenBy(w=>w.Name).ToArray();
-        Items=(limit?rows.Take(3):rows).Select(w=>new WorkItemViewModel(w,shell)).ToArray();ExtraCount=limit?Math.Max(0,rows.Length-3):0;
+        Items=(limit?rows.Take(3):rows).Select(w=>new WorkItemViewModel(w,shell)).ToArray();ExtraCount=limit?Math.Max(0,rows.Length-3):0;HasOverdue=rows.Any(w=>w.IsOverdue(DateOnly.FromDateTime(DateTime.Today)));
         OpenDayCommand=new RelayCommand(_=>calendar.ShowDay(Date));
     }
 }

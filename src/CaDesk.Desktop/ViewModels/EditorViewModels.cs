@@ -5,12 +5,20 @@ public abstract class EditorViewModel : Observable
 {
     protected readonly ShellViewModel Shell;
     public event EventHandler? Saved;
+    private bool saving;
+    public bool IsSaving {get=>saving;private set{Set(ref saving,value);Raise(nameof(CanEdit));CommandManager.InvalidateRequerySuggested();}}
+    public bool CanEdit=>!IsSaving;
+    protected async Task<bool> SaveOnceAsync()
+    {
+        if(IsSaving)return false;IsSaving=true;
+        try {await SaveAsync();return true;} finally {IsSaving=false;}
+    }
     private string error="";
     public string Error {get=>error;set{Set(ref error,value);Raise(nameof(HasError));}}
     public bool HasError=>Error.Length>0;
     public abstract string Title {get;}
     public ICommand SaveCommand {get;}
-    protected EditorViewModel(ShellViewModel shell){Shell=shell;SaveCommand=new AsyncCommand(async()=>{Error="";await SaveAsync();Saved?.Invoke(this,EventArgs.Empty);},ReportError);}
+    protected EditorViewModel(ShellViewModel shell){Shell=shell;SaveCommand=new AsyncCommand(async()=>{Error="";if(await SaveOnceAsync())Saved?.Invoke(this,EventArgs.Empty);},ReportError);}
     protected void ReportError(Exception ex)=>Error=ex is ValidationException?ex.Message:"This change could not be saved. Check the data folder and available disk space, then try again.";
     protected abstract Task SaveAsync();
     protected void Complete()=>Saved?.Invoke(this,EventArgs.Empty);
@@ -48,7 +56,7 @@ public sealed class WorkEditorViewModel : EditorViewModel
         id=row?.Id;Clients=shell.Store.Snapshot.Clients.Select(c=>new ClientOption(c.Id,c.Name)).ToArray();clientId=row?.Client.Id??selectedClient??Clients.FirstOrDefault()?.Value;
         name=row?.Name??"";status=row?.Status??WorkStatus.NotStarted;deadline=row?.Deadline?.ToDateTime(TimeOnly.MinValue);notes=row?.Notes??"";
         ClearDeadlineCommand=new RelayCommand(_=>Deadline=null);
-        OpenClientCommand=new AsyncCommand(async()=>{await SaveAsync();Complete();Shell.OpenClient(ClientId!.Value);},ReportError);
+        OpenClientCommand=new AsyncCommand(async()=>{if(await SaveOnceAsync()){Complete();Shell.OpenClient(ClientId!.Value);}},ReportError);
     }
     protected override Task SaveAsync()
     {
