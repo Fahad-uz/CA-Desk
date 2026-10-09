@@ -76,7 +76,14 @@ public sealed class CalendarDay
         Date = date;
         IsCurrentMonth = date.Month == selected.Month;
         var rows = events.OrderBy(e => e.IsStudyNote).ThenBy(e => e.Name, StringComparer.OrdinalIgnoreCase).ThenBy(e => e.Id).ToArray();
-        Items = (limit ? rows.Take(3) : rows).ToArray();
+        // Keep both event types visible in a busy month cell; overflow opens the complete day.
+        if (limit && rows.Length > 3 && rows.Any(e => e.IsStudyNote) && rows.Any(e => e.IsWork))
+        {
+            var firstWork = rows.First(e => e.IsWork);
+            var firstNote = rows.First(e => e.IsStudyNote);
+            Items = new[] { firstWork, firstNote }.Concat(rows.Where(e => e != firstWork && e != firstNote).Take(1)).ToArray();
+        }
+        else Items = (limit ? rows.Take(3) : rows).ToArray();
         ExtraCount = limit ? Math.Max(0, rows.Length - 3) : 0;
         HasOverdue = rows.Any(w => w.IsOverdue);
         OpenDayCommand = new RelayCommand(_ => calendar.ShowDay(Date));

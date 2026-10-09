@@ -40,6 +40,7 @@ public abstract class EditorViewModel : Observable
     }
     public bool HasError => Error.Length > 0;
     public bool DateInputValid { get; set; } = true;
+    public virtual string DateErrorMessage => WorkEditorViewModel.InvalidDateMessage;
     public abstract string Title
     {
         get;

@@ -25,7 +25,7 @@ public static class DateInput
             if (picker.DataContext is EditorViewModel editor)
             {
                 editor.DateInputValid = false;
-                editor.Error = WorkEditorViewModel.InvalidDateMessage;
+                editor.Error = editor.DateErrorMessage;
             }
             else if (picker.DataContext is WorkItemViewModel item)
                 item.ReportInvalidDate();
@@ -48,7 +48,7 @@ public static class DateInput
             return;
         editor.DateInputValid = string.IsNullOrWhiteSpace(input.Text) ||
             DateTime.TryParse(input.Text, CultureInfo.CurrentCulture, DateTimeStyles.None, out _);
-        if (editor.DateInputValid && editor.Error == WorkEditorViewModel.InvalidDateMessage)
+        if (editor.DateInputValid && editor.Error == editor.DateErrorMessage)
             editor.Error = "";
     }
 }

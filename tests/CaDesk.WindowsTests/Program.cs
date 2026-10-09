@@ -411,7 +411,12 @@ internal static class Program
         foreach (var mode in Enum.GetValues<CalendarMode>())
         {
             shell.Calendar.Mode = mode; shell.Calendar.DisplayFilter = CalendarDisplayFilter.Everything;
-            if (mode == CalendarMode.Month) Check(shell.Calendar.Days.Single(d => d.Date == today).ExtraCount == 3, "Mixed month-calendar overflow counts both work deadlines and study notes");
+            if (mode == CalendarMode.Month)
+            {
+                var mixed = shell.Calendar.Days.Single(d => d.Date == today);
+                Check(mixed.ExtraCount == 3, "Mixed month-calendar overflow counts both work deadlines and study notes");
+                Check(mixed.Items.Any(e => e.IsStudyNote) && mixed.Items.Any(e => e.IsWork), "Busy month cells keep both purple notes and client deadlines visible before overflow");
+            }
             shell.Calendar.DisplayFilter = CalendarDisplayFilter.StudyNotes;
             Check(shell.Calendar.Days.Sum(d => d.Items.Count) == 2 && shell.Calendar.Days.SelectMany(d => d.Items).All(e => e.IsStudyNote && e.Color == "#8B5CF6" && e.StatusLabel == ""), $"{mode} displays purple notes without work statuses");
             shell.Calendar.DisplayFilter = CalendarDisplayFilter.ClientDeadlines;

@@ -50,6 +50,7 @@ public sealed class NoteEditorViewModel : EditorViewModel
     private string heading, body;
     private DateTime? noteDate;
     public override string Title => id == null ? "New study note" : "Study note";
+    public override string DateErrorMessage => "Choose a valid date for this note.";
     public string Heading { get => heading; set { if (Set(ref heading, value)) Raise(nameof(IsDirty)); } }
     public string Body { get => body; set { if (Set(ref body, value)) Raise(nameof(IsDirty)); } }
     public DateTime? NoteDate
@@ -66,7 +67,7 @@ public sealed class NoteEditorViewModel : EditorViewModel
     }
     protected override Task SaveAsync()
     {
-        if (!DateInputValid || NoteDate == null) throw new ValidationException("Choose a valid date for this note.");
+        if (!DateInputValid || NoteDate == null) throw new ValidationException(DateErrorMessage);
         return Shell.Store.SaveNoteAsync(id, Heading, Body, DateOnly.FromDateTime(NoteDate.Value));
     }
 }
