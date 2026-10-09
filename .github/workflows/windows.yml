@@ -21,6 +21,13 @@ jobs:
         run: dotnet build CaDesk.slnx -c Release --no-restore
       - name: Test
         run: dotnet test tests/CaDesk.Tests -c Release --no-build --logger "trx;LogFileName=core.trx"
+      - name: Exercise and render the native WPF interface
+        run: dotnet run --project tests/CaDesk.WindowsTests -c Release --no-build -- artifacts/windows-checks
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-interface-checks
+          path: artifacts/windows-checks
       - name: Publish portable Windows app
         run: dotnet publish src/CaDesk.Desktop -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -o artifacts/CA-Desk
       - name: Package
