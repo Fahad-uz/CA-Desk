@@ -7,6 +7,10 @@ namespace CaDesk.Desktop.Views;
 public partial class SettingsView : UserControl
 {
     public SettingsView() => InitializeComponent();
+    private async void SaveProfile(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is SettingsViewModel vm) await vm.SaveProfileAsync();
+    }
     private async void ExportBackup(object sender, RoutedEventArgs e)
     {
         if (DataContext is not SettingsViewModel vm) return;

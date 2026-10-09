@@ -6,6 +6,19 @@
       <TextBlock Text="Simple by design. Everything stays on this computer." Style="{StaticResource Caption}" Margin="0,8,0,28"/>
       <Border Style="{StaticResource Card}" Margin="0,0,0,20">
         <StackPanel>
+          <TextBlock Text="Your profile" Style="{StaticResource SectionTitle}"/>
+          <TextBlock Text="Add your name for a personal welcome when you open CA Desk." Style="{StaticResource Caption}" TextWrapping="Wrap"/>
+          <StackPanel IsEnabled="{Binding CanUse}" Margin="0,18,0,0">
+            <Label Content="Your name" Target="{Binding ElementName=ProfileNameInput}" Padding="0,0,0,8"/>
+            <TextBox x:Name="ProfileNameInput" Text="{Binding ProfileName,UpdateSourceTrigger=PropertyChanged}" MaxLength="80" MaxWidth="420" HorizontalAlignment="Left" MinWidth="280" AutomationProperties.Name="Your profile name"/>
+            <Button x:Name="SaveProfileButton" Content="Save name" Click="SaveProfile" Style="{StaticResource Primary}" HorizontalAlignment="Left" Margin="0,14,0,0"/>
+          </StackPanel>
+          <TextBlock Text="{Binding ProfileMessage}" Foreground="#2563EB" FontSize="12" TextWrapping="Wrap" Margin="0,12,0,0"/>
+          <TextBlock Text="Your name is kept on this computer and included in backups. Leave it blank to clear it." Style="{StaticResource Caption}" TextWrapping="Wrap" FontSize="11" Margin="0,8,0,0"/>
+        </StackPanel>
+      </Border>
+      <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+        <StackPanel>
           <TextBlock Text="CA Desk" FontSize="24" FontWeight="SemiBold"/>
           <TextBlock Text="Work management for Chartered Accountants" Style="{StaticResource Caption}" Margin="0,6,0,20"/>
           <TextBlock Text="{Binding Version,StringFormat=Version {0}}"/>

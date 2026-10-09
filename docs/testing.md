@@ -13,6 +13,10 @@
 
 The release-verification artifact contains native/upgrade reports, screenshots, xUnit results, executable verification and the source Git bundle. Only fictional isolated databases are used; no production data enters source or release distributions.
 
+## v1.1.1 release gates
+
+The Windows workflows also exercise the editable profile field and Save name button, Unicode and whitespace handling, invalid-name protection, long-name layout at 1000×680, clearing a name, complete backup restoration and the personal greeting in a reopened window. Packaged verification copies only the published EXE into a separate folder with spaces, starts it from an unrelated working directory with a fresh extraction cache and exercises WPF, native SQLite, profile persistence, backups and all window controls. Publication requires these gates to pass. Reports are included in the release verification artifact.
+
 ## Test boundaries
 
 The developer host is macOS; core SQLite tests and Windows cross-compilation run locally. Native execution uses a GitHub-hosted Windows Server runner. Physical Windows 10/11 machines, every DPI setting and an exhaustive accessibility audit have not been tested. Targeted OS compatibility and the test OS are distinct.
@@ -24,7 +28,7 @@ dotnet build CaDesk.slnx -c Release
 dotnet test tests/CaDesk.Tests -c Release --no-build
 ./scripts/Verify-Upgrade.ps1 # GitHub CLI with access to the private repository
 dotnet run --project tests/CaDesk.WindowsTests -c Release --no-build -- artifacts/windows-checks
-./scripts/Publish.ps1 -Version 1.1.0
+./scripts/Publish.ps1 -Version 1.1.1
 ```
 
 All checks return a nonzero exit code on failure. The release workflow stops before publication if any upgrade, core, native or packaged-executable check fails.

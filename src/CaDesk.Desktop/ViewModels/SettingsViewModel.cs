@@ -5,10 +5,31 @@ public sealed class SettingsViewModel(ShellViewModel shell) : Observable
 {
     public string DatabasePath => shell.Store.Repository.DatabasePath;
     public string BackupDirectory => shell.Store.Repository.BackupDirectory;
-    public string Version => typeof(App).Assembly.GetName().Version?.ToString(3) ?? "1.1.0";
+    public string Version => typeof(App).Assembly.GetName().Version?.ToString(3) ?? "1.1.1";
     private bool busy;
     public bool IsBusy { get => busy; private set { Set(ref busy, value); Raise(nameof(CanUse)); } }
     public bool CanUse => !IsBusy;
+    private string profileName = "";
+    public string ProfileName { get => profileName; set { Set(ref profileName, value); ProfileMessage = ""; } }
+    private string profileMessage = "";
+    public string ProfileMessage { get => profileMessage; private set => Set(ref profileMessage, value); }
+    public void LoadProfile() { ProfileName = shell.ProfileName; }
+    public async Task SaveProfileAsync()
+    {
+        if (IsBusy) return;
+        var name = ProfileName.Trim();
+        if (name.Length > 80 || name.Contains('\r') || name.Contains('\n'))
+        { ProfileMessage = "Use a name of up to 80 characters on one line."; return; }
+        IsBusy = true;
+        try
+        {
+            await shell.Store.SavePreferenceAsync("profile.name", name);
+            ProfileName = name;
+            ProfileMessage = name.Length > 0 ? "Name saved. Your welcome message has been updated." : "Name cleared. You can add it again at any time.";
+        }
+        catch { ProfileMessage = "Your name could not be saved. Check the data folder and try again."; }
+        finally { IsBusy = false; }
+    }
     private string message = "";
     public string Message { get => message; private set => Set(ref message, value); }
     public async Task ExportAsync(string path)

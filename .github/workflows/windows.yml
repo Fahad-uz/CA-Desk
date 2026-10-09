@@ -53,7 +53,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: CA-Desk-win-x64
-          path: artifacts/CA-Desk-v*-win-x64.zip
+          path: |
+            artifacts/CA-Desk-v*-win-x64.zip*
+            artifacts/CA-Desk-v*-win-x64.exe*
       - uses: actions/upload-artifact@v4
         if: always()
         with:

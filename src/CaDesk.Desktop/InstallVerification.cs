@@ -32,12 +32,16 @@ internal static class InstallVerification
                     throw new InvalidOperationException("Packaged persistence check failed.");
                 var today = DateOnly.FromDateTime(DateTime.Today);
                 await store.SaveNoteAsync(null, "Packaged study note", "First line\nSecond line", today);
+                window.Shell.Settings.ProfileName = "Alex Shah";
+                await window.Shell.Settings.SaveProfileAsync();
                 var backup = Path.Combine(folder, "packaged-export.db"); await store.ExportBackupAsync(backup);
                 await store.DeleteClientAsync(c.Id); await store.DeleteNoteAsync(store.Snapshot.Notes.Single().Id);
+                await store.SavePreferenceAsync("profile.name", "Temporary name");
                 await store.RestoreBackupAsync(backup);
+                window.Shell.ApplyPreferences(); window.Shell.Refresh();
                 var restored = new Repository(path).Load();
                 window.Shell.Calendar.Mode = ViewModels.CalendarMode.Day;
-                if (restored.Clients.Single().DueDate != today.AddDays(5) || restored.Notes.Single().Body != "First line\nSecond line" || window.Shell.Calendar.Days.Single().Items.Count != 2 || window.Shell.Dashboard.Progress.Percentage != 100)
+                if (restored.Clients.Single().DueDate != today.AddDays(5) || restored.Notes.Single().Body != "First line\nSecond line" || restored.Preferences["profile.name"] != "Alex Shah" || window.Shell.Greeting != "Welcome back, Alex Shah" || ((TextBlock)window.FindName("SidebarProfileName")).Text != "Alex Shah" || window.Shell.Calendar.Days.Single().Items.Count != 2 || window.Shell.Dashboard.Progress.Percentage != 100)
                     throw new InvalidOperationException("Packaged notes, due dates, backup or calendar verification failed.");
                 window.Shell.Navigate("Notes");
                 var minimize = (Button)window.FindName("MinimizeButton");
@@ -67,7 +71,7 @@ internal static class InstallVerification
                     await Task.Delay(25);
                 if (!closed)
                     throw new InvalidOperationException("Packaged Close button did not close the window.");
-                File.WriteAllText(Path.Combine(folder, "result.txt"), "PASS: Published self-contained win-x64 executable launched, rendered WPF, wrote SQLite, reopened it, preserved study notes and client due dates, exported/restored a verified backup, updated the calendar and dashboard progress and operated Minimize, Maximize, Restore and Close title-bar buttons.");
+                File.WriteAllText(Path.Combine(folder, "result.txt"), "PASS: Published self-contained single-file win-x64 executable launched, rendered WPF, wrote SQLite, reopened it, preserved study notes, client due dates and profile name, exported/restored a verified backup, displayed the personal greeting and sidebar name, updated the calendar and dashboard progress and operated Minimize, Maximize, Restore and Close title-bar buttons.");
                 app.Shutdown(0);
             }
             catch (Exception e) { File.WriteAllText(Path.Combine(folder, "failure.txt"), e.ToString()); app.Shutdown(1); }

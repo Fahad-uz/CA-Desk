@@ -7,13 +7,15 @@ A native, offline Windows desktop application for Chartered Accountants who mana
 [Latest Windows release](https://github.com/Fahad-uz/CA-Desk/releases/latest) · [All releases](https://github.com/Fahad-uz/CA-Desk/releases)
 
 1. Sign in to GitHub with access to this private repository.
-2. Download `CA-Desk-v1.1.0-win-x64.zip` from the release's **Assets** section.
-3. Extract **all** files into a folder and double-click `CA-Desk.exe`.
+2. Download `CA-Desk-v1.1.1-win-x64.exe` from the release's **Assets** section.
+3. Place the executable on your Desktop or in any folder and double-click it. The ZIP is also available with instructions and notices.
 4. Choose **Add Client**, open the client's workspace and choose **Add Work Area**.
 
-The portable package includes .NET and SQLite; end users need no developer tools, runtime installation or administrator access. Keep the extracted files together. The workspace starts empty.
+The portable package includes .NET and SQLite; end users need no developer tools, runtime installation or administrator access. The executable includes all required dependencies; copying just the EXE is supported. The workspace starts empty unless existing CA Desk data is found.
 
 ## Features
+
+- Personal profile name in Settings, a “Welcome back, Name” greeting when opening the app and your name at the top of the left sidebar. Saved locally and included in backups.
 
 - Dashboard with live summary cards, status donut chart, client progress and unfinished deadlines. Click cards to open the corresponding table filter.
 - Optional client due dates, calendar days remaining, due-today and overdue indicators on cards, the compact table and client workspaces.
@@ -33,11 +35,11 @@ Targets Windows 10/11 **64-bit**, with a WPF `win-x64` distribution. .NET 10's [
 
 Saved data lives in `%LOCALAPPDATA%\CADesk\Data\cadesk.db`, separate from the application folder. SQLite uses foreign keys, transactions, parameterised statements, WAL and versioned, transactional forward migrations. Deadlines are ISO date-only values and do not shift with time zones. No personal data or production database is committed.
 
-To update, close CA Desk and extract the next release into a new folder. Launch its executable; the user-profile database is retained. v1.1.0 automatically detects v1.0.x data at `%LOCALAPPDATA%\CA Desk\ca-desk.db`, verifies it and transfers it to the permanent path. The original file and verified recovery backups are retained. A database from a newer schema version is refused with a clear message rather than reset.
+To update, close CA Desk and replace the executable with the next release. Launch its executable; the user-profile database is retained. v1.1.0 automatically detects v1.0.x data at `%LOCALAPPDATA%\CA Desk\ca-desk.db`, verifies it and transfers it to the permanent path. The original file and verified recovery backups are retained. A database from a newer schema version is refused with a clear message rather than reset.
 
 ## Backup and recovery
 
-Settings provides **Export Backup**, **Restore Backup** and **Open backups folder**. An export includes every client/work field, client due dates, personal study notes and saved calendar/client-view preferences. Choose a new `.db` filename. Restore checks the file first, asks before replacing current data, backs up current data, migrates an isolated candidate when needed, verifies the restored database and refreshes the workspace.
+Settings provides **Export Backup**, **Restore Backup** and **Open backups folder**. An export includes every client/work field, client due dates, personal study notes and profile name and saved calendar/client-view preferences. Choose a new `.db` filename. Restore checks the file first, asks before replacing current data, backs up current data, migrates an isolated candidate when needed, verifies the restored database and refreshes the workspace.
 
 Automatic backups run at startup and local date changes, at most once daily, under `%LOCALAPPDATA%\CADesk\Backups`. The newest 14 daily copies are kept. Pre-migration, legacy-transfer and pre-restore recovery copies are retained separately. All copies use SQLite's backup API, including WAL writes. A failed migration rolls back and offers restoration of its verified pre-update backup; startup stops rather than opening partial or empty data.
 
@@ -71,10 +73,10 @@ Core tests and cross-compilation can also run on a non-Windows developer host wi
 After a successful build and test run, run on Windows:
 
 ```powershell
-./scripts/Publish.ps1 -Version 1.1.0
+./scripts/Publish.ps1 -Version 1.1.1
 ```
 
-This publishes a self-contained x64 app, launches its executable against an isolated test database, creates `artifacts/CA-Desk-v1.1.0-win-x64.zip` and writes its SHA-256 checksum. No test database enters the distribution. There is no installer or code-signing certificate in this version.
+This publishes a self-contained single-file x64 app with embedded native libraries. It copies only the EXE into an isolated Desktop-style folder, launches it from a different working directory with a fresh extraction cache, and verifies WPF, SQLite, profile, backup and window controls. It creates `artifacts/CA-Desk-v1.1.1-win-x64.exe`, the optional ZIP and SHA-256 checksums. No test database enters the distribution. There is no installer or code-signing certificate in this version.
 
 ## Automated builds and future releases
 
@@ -85,7 +87,7 @@ For an update:
 1. Make, test, commit and push the change.
 2. Update `Directory.Build.props` to the semantic version and add `docs/releases/vX.Y.Z.md`.
 3. Push the matching `vX.Y.Z` tag, or run **Publish Windows release** in Actions with that version.
-4. The workflow builds, runs core/native and previous-release upgrade tests, verifies the packaged executable and publishes a GitHub Release with the ZIP and checksum. Existing releases cannot be overwritten.
+4. The workflow builds, runs core/native and previous-release upgrade tests, verifies the packaged executable and publishes a GitHub Release with the standalone EXE, optional ZIP and their checksums. Existing releases cannot be overwritten.
 
 Add transactional schema migrations in `Repository` when data structure changes; preserve existing records. Never put real client information in source, test fixtures or release assets.
 
@@ -104,4 +106,4 @@ Add transactional schema migrations in `Repository` when data structure changes;
 | `scripts/Publish.ps1` | Portable packaging and executable verification |
 | `docs` | Architecture, usage, test evidence and release notes |
 
-See [architecture](docs/architecture.md) for the data flow and [release notes](docs/releases/v1.1.0.md) for limitations. Automated Windows-runner testing does not substitute for physical Windows 10/11 acceptance or every display-scaling configuration.
+See [architecture](docs/architecture.md) for the data flow and [release notes](docs/releases/v1.1.1.md) for limitations. Automated Windows-runner testing does not substitute for physical Windows 10/11 acceptance or every display-scaling configuration.

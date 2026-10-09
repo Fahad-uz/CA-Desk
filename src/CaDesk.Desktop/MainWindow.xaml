@@ -124,6 +124,7 @@
             <TextBlock Text="CA Desk" Foreground="White" FontSize="24" FontWeight="SemiBold" VerticalAlignment="Center"/>
           </StackPanel>
           <TextBlock Text="Your practice, in focus." Foreground="#94A3B8" FontSize="12" Margin="0,14,0,0"/>
+          <TextBlock x:Name="SidebarProfileName" Text="{Binding ProfileName}" ToolTip="{Binding ProfileName}" Foreground="#CBD5E1" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Margin="0,18,0,0" Visibility="{Binding HasProfileName,Converter={StaticResource Visible}}"/>
         </StackPanel>
         <StackPanel Grid.Row="1">
           <TextBlock Text="WORKSPACE" Foreground="#64748B" FontSize="10" FontWeight="SemiBold" Margin="16,0,0,12"/>
@@ -226,8 +227,7 @@
       </Grid.RowDefinitions>
       <Border BorderBrush="#E2E8F0" BorderThickness="0,0,0,1" Background="White" Padding="30,0">
         <DockPanel>
-          <TextBlock Text="{Binding TodayLabel}" Style="{StaticResource Caption}" VerticalAlignment="Center"/>
-          <Button x:Name="NotesNavigation" Command="{Binding NavigateCommand}" CommandParameter="Notes" HorizontalAlignment="Right" VerticalAlignment="Center" ToolTip="Personal study notes" AutomationProperties.Name="Notes">
+          <Button x:Name="NotesNavigation" DockPanel.Dock="Right" Command="{Binding NavigateCommand}" CommandParameter="Notes" HorizontalAlignment="Right" VerticalAlignment="Center" ToolTip="Personal study notes" AutomationProperties.Name="Notes">
             <Button.Style>
               <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
                 <Setter Property="Background" Value="#FAF5FF"/><Setter Property="BorderBrush" Value="#EDE9FE"/><Setter Property="Foreground" Value="#7C3AED"/>
@@ -236,6 +236,10 @@
             </Button.Style>
             <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE82D;" FontFamily="Segoe MDL2 Assets" Foreground="#7C3AED" Margin="0,0,9,0" VerticalAlignment="Center"/><TextBlock Text="Notes" Foreground="#7C3AED" FontWeight="SemiBold"/></StackPanel>
           </Button>
+          <StackPanel VerticalAlignment="Center" Margin="0,0,20,0">
+            <TextBlock x:Name="WelcomeGreeting" Text="{Binding Greeting}" ToolTip="{Binding Greeting}" FontSize="16" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+            <TextBlock Text="{Binding TodayLabel}" Style="{StaticResource Caption}" FontSize="11" Margin="0,3,0,0"/>
+          </StackPanel>
         </DockPanel>
       </Border>
       <Border Grid.Row="1" Margin="28,16,28,0" Background="#FEF2F2" CornerRadius="8" Padding="14" Visibility="{Binding HasMessage,Converter={StaticResource Visible}}">

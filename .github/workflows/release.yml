@@ -7,7 +7,7 @@ on:
       version:
         description: 'Version to build and release (must match Directory.Build.props)'
         required: true
-        default: '1.1.0'
+        default: '1.1.1'
 permissions:
   contents: write
 concurrency:
@@ -54,7 +54,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: Windows-portable-release
-          path: artifacts/CA-Desk-v*-win-x64.zip*
+          path: |
+            artifacts/CA-Desk-v*-win-x64.zip*
+            artifacts/CA-Desk-v*-win-x64.exe*
           compression-level: 0
       - name: Save development history
         run: git bundle create artifacts/CA-Desk-source.bundle --all
@@ -75,18 +77,20 @@ jobs:
         run: |
           $tag="v$env:RELEASE_VERSION"
           $zip="artifacts/CA-Desk-$tag-win-x64.zip"
+          $exe="artifacts/CA-Desk-$tag-win-x64.exe"
           $notes="docs/releases/$tag.md"
           if (-not (Test-Path $notes)) { throw "Missing release notes: $notes" }
           $existing=gh release view $tag --json tagName 2>$null
           if ($LASTEXITCODE -eq 0) { throw "Release $tag already exists; releases are immutable." }
-          $title = if ($env:RELEASE_VERSION -eq '1.1.0') { "CA Desk $tag – Study Notes" } else { "CA Desk $tag — Windows" }
-          gh release create $tag $zip "$zip.sha256" --target $env:GITHUB_SHA --title $title --notes-file $notes --draft
+          $title = if ($env:RELEASE_VERSION -eq '1.1.1') { "CA Desk $tag – Personal Profile & Standalone EXE" } elseif ($env:RELEASE_VERSION -eq '1.1.0') { "CA Desk $tag – Study Notes" } else { "CA Desk $tag — Windows" }
+          gh release create $tag $exe "$exe.sha256" $zip "$zip.sha256" --target $env:GITHUB_SHA --title $title --notes-file $notes --draft
           if ($LASTEXITCODE -ne 0) { throw 'GitHub Release staging failed.' }
           $releaseJson=gh release view $tag --json assets,isDraft
           if ($LASTEXITCODE -ne 0) { throw 'Could not verify staged release assets.' }
           $release=$releaseJson | ConvertFrom-Json
           $zipName=Split-Path $zip -Leaf
-          foreach ($assetName in @($zipName, "$zipName.sha256")) {
+          $exeName=Split-Path $exe -Leaf
+          foreach ($assetName in @($exeName, "$exeName.sha256", $zipName, "$zipName.sha256")) {
             $asset=@($release.assets | Where-Object { $_.name -eq $assetName })
             if ($asset.Count -ne 1 -or $asset[0].size -le 0) { throw "Missing release asset: $assetName" }
           }

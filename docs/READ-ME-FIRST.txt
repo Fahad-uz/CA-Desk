@@ -1,18 +1,20 @@
 CA DESK {{VERSION}} - WINDOWS (64-BIT)
 
-1. Extract ALL files from CA-Desk-v{{VERSION}}-win-x64.zip into a folder.
-2. Open that folder and double-click CA-Desk.exe.
-3. Click Add Client, then open its workspace and add work areas.
+1. Download CA-Desk-v{{VERSION}}-win-x64.exe, or extract CA-Desk.exe from the ZIP.
+2. Place just the executable on your Desktop or in any folder and double-click it.
+3. Open Settings to save your name, then add clients and work areas.
 
 No installation, administrator access, .NET download, account or internet
-connection is needed to use the application. Keep all extracted files together.
+connection is needed to use the application. All dependencies are bundled in
+the executable, so copying only the EXE is supported. The runtime extracts its
+embedded libraries into a temporary cache automatically on first launch.
 A first launch starts empty unless an existing CA Desk database is found.
 
 Changes are automatically saved in:
 %LOCALAPPDATA%\CADesk\Data\cadesk.db
 
-To update: close CA Desk, extract the newer release into a new folder and
-launch its CA-Desk.exe. Your existing database remains in your Windows profile. v1.1.0 automatically
+To update: close CA Desk, replace the executable with the newer release and
+launch it. Your existing database remains in your Windows profile. CA Desk automatically
 finds and preserves v1.0.x data from the old CA Desk folder. Future versions
 use the permanent CADesk/Data path. Do not switch back to an old executable
 after upgrading; keep the legacy database as a recovery copy.
@@ -25,7 +27,10 @@ study notes. Each note has a heading, plain-text body and editable date.
 Calendar: choose Month, Week or Day; click a work deadline or purple study
 note to edit it. Use the event filter to show everything, deadlines or notes.
 Client filtering keeps enabled personal notes visible.
-Settings: Export Backup saves all data to a new .db filename. Restore Backup
+Settings: enter your name under Your profile and click Save name. The app
+shows Welcome back, Name and your name at the top of the left sidebar.
+Your profile name is retained on restarts, updates and in exported backups.
+Export Backup saves all data to a new .db filename. Restore Backup
 validates a file, asks before replacing current data and keeps a recovery copy.
 Daily automatic backups and pre-update/pre-restore copies are saved under:
 %LOCALAPPDATA%\CADesk\Backups\

@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.1
+
+Added an optional saved profile name in Settings, a personal welcome at startup and the name in the left sidebar. Names are retained in the existing database and complete backups. Changed Windows packaging to a self-contained single executable with native dependencies embedded, so copying only the EXE to Desktop works. The package gate launches an EXE-only copy from another working directory with a fresh runtime cache. Releases now include a direct EXE download, optional ZIP and both checksums.
+
 ## 1.1.0
 
 Added independent personal Study Notes with heading/body/date editing, instant search, purple calendar entries, event display filters, right-side navigation, keyboard shortcuts and unsaved-change protection. Added client due dates and remaining-day indicators. Introduced permanent profile storage, automatic legacy detection, verified transactional migrations, daily/local exported backups, confirmed validated restores and persistent view preferences. Release gates test upgrades using the published v1.0.1 package and 150-client/3,000-work fixtures.

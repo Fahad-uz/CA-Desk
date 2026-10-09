@@ -143,6 +143,7 @@ internal static class Program
         shell.Dialogs = dialogs;
         await Capture(window, "00-empty-dashboard");
         Check(shell.Dashboard.Cards.All(c => c.Count == 0), "Empty first launch has no fabricated statistics");
+        Check(shell.Greeting == "Welcome to CA Desk" && !shell.HasProfileName && shell.Settings.ProfileName == "", "First launch welcomes the user without inventing a profile name");
         var ce = new ClientEditorViewModel(shell, null) { Name = "Acme Private Limited", Description = "Fictional acceptance-test client" };
         ce.SaveCommand.Execute(null);
         await Until(() => store.Snapshot.Clients.Count == 1);
@@ -276,6 +277,7 @@ internal static class Program
         await store.UpdateDeadlineAsync(first.Id, today.AddDays(-2));
         Check(shell.Dashboard.Cards.Single(c => c.Label == "Overdue Work").Count == 1, "Dashboard overdue count excludes completed and future work");
         await RunStudyNotes(window, store, dialogs, cid, today, folder);
+        await RunProfile(window, store, folder);
         shell.Navigate("Dashboard");
         window.Width = 1920;
         window.Height = 1080;
@@ -352,6 +354,8 @@ internal static class Program
         await reopened.ReloadAsync();
         var window2 = new MainWindow(reopened, false);
         window2.Show();
+        await Until(() => window2.IsLoaded);
+        Check(window2.Shell.ProfileName == "Aarav Shah" && window2.Shell.Settings.ProfileName == "Aarav Shah" && ((TextBlock)window2.FindName("WelcomeGreeting")).Text == "Welcome back, Aarav Shah", "Reopening the actual window loads the saved profile and personal greeting");
         await Capture(window2, "09-reopened");
         Check(reopened.Snapshot.WorkAreas.Count == keep && reopened.Snapshot.WorkAreas.First(w => w.Id == first.Id).Notes.Length > 0, "Closing and reopening the WPF app preserves saved SQLite data");
         Check(reopened.Snapshot.Notes.Count == noteCount && reopened.Snapshot.Clients.Single(c => c.Id == cid).DueDate == today.AddDays(3), "Study notes and client due dates survive closing and reopening the actual Windows interface");
@@ -362,6 +366,33 @@ internal static class Program
         Check(!reopened.Snapshot.WorkAreas.Any(w => w.ClientId == cid) && reopened.Snapshot.Clients.Count == 2, "Confirmed client deletion cascades its work and retains other clients");
         window2.Close();
         Directory.Delete(folder, true);
+    }
+    private static async Task RunProfile(MainWindow window, ApplicationStore store, string folder)
+    {
+        var shell = window.Shell;
+        shell.Navigate("Settings");
+        await Dispatcher.Yield(DispatcherPriority.ApplicationIdle); window.UpdateLayout();
+        var input = Children<TextBox>(window).Single(b => System.Windows.Automation.AutomationProperties.GetName(b) == "Your profile name");
+        input.Text = "  Aarav शाह  ";
+        Check(!shell.HasProfileName, "Typing a profile name keeps the saved greeting unchanged until Save name");
+        var save = Children<Button>(window).Single(b => b.Name == "SaveProfileButton");
+        save.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); save.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        await Until(() => !shell.Settings.IsBusy && shell.ProfileName == "Aarav शाह");
+        Check(shell.Settings.ProfileName == "Aarav शाह" && ((TextBlock)window.FindName("WelcomeGreeting")).Text == "Welcome back, Aarav शाह" && ((TextBlock)window.FindName("SidebarProfileName")).Text == "Aarav शाह", "Save name trims surrounding spaces, preserves Unicode and updates both visible name locations");
+        shell.Settings.ProfileName = new string('W', 81); await shell.Settings.SaveProfileAsync();
+        Check(shell.ProfileName == "Aarav शाह" && shell.Settings.ProfileMessage.Contains("80"), "Invalid profile names cannot overwrite the saved name");
+        shell.Settings.ProfileName = new string('W', 80); await shell.Settings.SaveProfileAsync();
+        await Capture(window, "11-long-profile-small", 1000, 680);
+        var greeting = (TextBlock)window.FindName("WelcomeGreeting"); var sidebar = (TextBlock)window.FindName("SidebarProfileName");
+        Check(greeting.TextTrimming == TextTrimming.CharacterEllipsis && sidebar.TextTrimming == TextTrimming.CharacterEllipsis && ((Button)window.FindName("NotesNavigation")).IsVisible, "Long names fit the small window with ellipsis and keep Notes navigation available");
+        shell.Settings.ProfileName = ""; await shell.Settings.SaveProfileAsync();
+        Check(shell.Greeting == "Welcome to CA Desk" && !shell.HasProfileName && sidebar.Visibility == Visibility.Collapsed, "Clearing a profile name restores the generic welcome and hides the sidebar name");
+        shell.Settings.ProfileName = "Aarav Shah"; await shell.Settings.SaveProfileAsync();
+        var backup = Path.Combine(folder, "profile-export.db"); await shell.Settings.ExportAsync(backup);
+        shell.Settings.ProfileName = "Temporary name"; await shell.Settings.SaveProfileAsync();
+        await shell.Settings.RestoreAsync(backup);
+        Check(shell.ProfileName == "Aarav Shah" && shell.Settings.ProfileName == "Aarav Shah" && greeting.Text == "Welcome back, Aarav Shah", "Backup restore preserves the profile name and refreshes both the greeting and editable field");
+        await Capture(window, "12-profile-settings");
     }
     private static async Task RunStudyNotes(MainWindow window, ApplicationStore store, TestDialogs dialogs, long cid, DateOnly today, string folder)
     {

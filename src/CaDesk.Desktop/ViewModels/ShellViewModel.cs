@@ -65,6 +65,9 @@ public sealed class ShellViewModel : Observable
         get => busy; set => Set(ref busy, value);
     }
     public string TodayLabel => DateTime.Today.ToString("dddd, d MMMM yyyy");
+    public string ProfileName => Store.Snapshot.Preferences.TryGetValue("profile.name", out var name) ? name.Trim() : "";
+    public bool HasProfileName => ProfileName.Length > 0;
+    public string Greeting => HasProfileName ? $"Welcome back, {ProfileName}" : "Welcome to CA Desk";
     public ICommand NavigateCommand
     {
         get;
@@ -160,6 +163,9 @@ public sealed class ShellViewModel : Observable
             table.Refresh();
         }
         Raise(nameof(TodayLabel));
+        Raise(nameof(ProfileName));
+        Raise(nameof(HasProfileName));
+        Raise(nameof(Greeting));
     }
     private bool preferencesReady, applyingPreferences;
     public void ApplyPreferences()
@@ -171,6 +177,7 @@ public sealed class ShellViewModel : Observable
             Calendar.Mode = p.TryGetValue("calendar.mode", out var mode) && Enum.TryParse<CalendarMode>(mode, out var m) && Enum.IsDefined(m) ? m : CalendarMode.Month;
             Calendar.DisplayFilter = p.TryGetValue("calendar.display", out var display) && Enum.TryParse<CalendarDisplayFilter>(display, out var d) && Enum.IsDefined(d) ? d : CalendarDisplayFilter.Everything;
             Clients.TableView = p.TryGetValue("clients.table", out var table) && bool.TryParse(table, out var t) && t;
+            Settings.LoadProfile();
             preferencesReady = true;
         }
         finally { applyingPreferences = false; }
