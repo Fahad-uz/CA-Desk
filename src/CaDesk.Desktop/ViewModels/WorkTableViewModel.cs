@@ -13,6 +13,7 @@ public sealed class WorkItemViewModel : Observable
     public string NotesPreview=>HasNotes?Notes.Replace('\n',' ').Replace('\r',' '):"—";
     public bool IsOverdue=>Row.IsOverdue(DateOnly.FromDateTime(DateTime.Today));
     public string DeadlineLabel=>Row.Deadline?.ToString("dd MMM yyyy")??"No deadline";
+    public string CalendarLabel=>$"{ClientName} · {Name} · {StatusLabel} · {DeadlineLabel}{(IsOverdue?" · Overdue":"")}";
     public string StatusLabel=>Options.StatusName(Status);
     private WorkStatus status;
     public WorkStatus Status {get=>status;set{if(Set(ref status,value)){Raise(nameof(StatusLabel));_=shell.RunAsync(()=>shell.Store.UpdateStatusAsync(Id,value));}}}
