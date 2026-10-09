@@ -2,6 +2,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using Microsoft.Data.Sqlite;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -45,9 +47,17 @@ internal static class Program
     private static async Task Capture(Window window,string name)
     {
         await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);window.UpdateLayout();
-        var width=(int)Math.Ceiling(window.ActualWidth);var height=(int)Math.Ceiling(window.ActualHeight);
-        var image=new RenderTargetBitmap(width,height,96,96,PixelFormats.Pbgra32);image.Render(window);
-        var png=new PngBitmapEncoder();png.Frames.Add(BitmapFrame.Create(image));using var f=File.Create(Path.Combine(output,name+".png"));png.Save(f);
+        var root=(FrameworkElement)window.Content;
+        var width=(int)window.Width;var height=(int)(double.IsNaN(window.Height)?window.ActualHeight:window.Height);
+        root.DataContext=window.DataContext;root.Resources.MergedDictionaries.Add(window.Resources);window.Content=null;
+        try
+        {
+            root.Measure(new Size(width,height));root.Arrange(new Rect(0,0,width,height));root.UpdateLayout();
+            var image=new RenderTargetBitmap(width,height,96,96,PixelFormats.Pbgra32);image.Render(root);
+            var png=new PngBitmapEncoder();png.Frames.Add(BitmapFrame.Create(image));using var f=File.Create(Path.Combine(output,name+".png"));png.Save(f);
+            if((int)root.ActualWidth!=width||(int)root.ActualHeight!=height)throw new Exception("Viewport did not render at its requested dimensions.");
+        }
+        finally {root.Resources.MergedDictionaries.Remove(window.Resources);window.Content=root;}
     }
     private static async Task Run()
     {
@@ -66,9 +76,9 @@ internal static class Program
         var first=store.Snapshot.WorkAreas.First();var row=store.Snapshot.Rows.First(w=>w.Id==first.Id);
         var edit=new WorkEditorViewModel(shell,row,null){Name="GST Filing — review",Notes="Updated notes\nSecond line",Deadline=today.AddDays(-1).ToDateTime(TimeOnly.MinValue)};edit.SaveCommand.Execute(null);await Until(()=>store.Snapshot.WorkAreas.First(w=>w.Id==first.Id).Name==edit.Name);Check(store.Snapshot.WorkAreas.First(w=>w.Id==first.Id).Notes.Contains('\n'),"Work details save name, deadline and multiline notes");
         shell.Navigate("Master Work Table");await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);window.UpdateLayout();
-        var combo=Children<ComboBox>(window).First(b=>System.Windows.Automation.AutomationProperties.GetName(b)=="Work status");combo.SelectedValue=WorkStatus.InProgress;await Until(()=>store.Snapshot.WorkAreas.First(w=>w.Id==first.Id).Status==WorkStatus.InProgress);
+        var combo=Children<ComboBox>(window).First(b=>System.Windows.Automation.AutomationProperties.GetName(b)=="Work status");combo.IsDropDownOpen=true;await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);Check(((Popup)combo.Template.FindName("PART_Popup",combo)).IsOpen,"Styled status dropdown opens its native selection popup");combo.SelectedValue=WorkStatus.InProgress;combo.IsDropDownOpen=false;await Until(()=>store.Snapshot.WorkAreas.First(w=>w.Id==first.Id).Status==WorkStatus.InProgress);
         Check(shell.Dashboard.Progress.InProgress==1&&shell.Master.Items.First(w=>w.Id==first.Id).IsOverdue,"Inline status dropdown persists and updates dashboard while overdue stays separate");
-        var datePicker=Children<DatePicker>(window).First(b=>System.Windows.Automation.AutomationProperties.GetName(b)=="Work deadline");datePicker.SelectedDate=today.AddDays(8).ToDateTime(TimeOnly.MinValue);await Until(()=>store.Snapshot.WorkAreas.First(w=>w.Id==first.Id).Deadline==today.AddDays(8));Check(true,"Inline native date picker edits the deadline");
+        var datePicker=Children<DatePicker>(window).First(b=>System.Windows.Automation.AutomationProperties.GetName(b)=="Work deadline");datePicker.IsDropDownOpen=true;await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);var datePopup=(Popup)datePicker.Template.FindName("PART_Popup",datePicker);Check(datePopup.IsOpen&&datePopup.Child is System.Windows.Controls.Calendar,"Styled date picker opens the native calendar");((System.Windows.Controls.Calendar)datePopup.Child).SelectedDate=today.AddDays(8).ToDateTime(TimeOnly.MinValue);datePicker.IsDropDownOpen=false;await Until(()=>store.Snapshot.WorkAreas.First(w=>w.Id==first.Id).Deadline==today.AddDays(8));Check(true,"Inline native date picker edits the deadline");
         shell.Master.Items.First(w=>w.Id==first.Id).ClearDeadlineCommand.Execute(null);await Until(()=>store.Snapshot.WorkAreas.First(w=>w.Id==first.Id).Deadline==null);Check(store.Snapshot.WorkAreas.First(w=>w.Id==first.Id).Notes=="Updated notes\nSecond line","Remove deadline preserves notes and status");
         await store.UpdateDeadlineAsync(first.Id,today);shell.Master.Search="GST";shell.Master.StatusFilter=WorkStatus.InProgress;shell.Master.DeadlineFilter=DeadlineFilter.Today;shell.Master.ClientFilter=cid;
         Check(shell.Master.Items.Count==1,"Master search combines with status, deadline and client filters");
@@ -96,6 +106,16 @@ internal static class Program
         var clientForm=new EditorWindow(new ClientEditorViewModel(shell,store.Snapshot.Clients[0])){Owner=window};clientForm.Show();await Capture(clientForm,"07-client-details");clientForm.Close();
         window.Width=1000;window.Height=680;foreach(var page in new[]{"Dashboard","Master Work Table","Calendar","Clients","Settings"}){shell.Navigate(page);await Capture(window,"08-small-"+page.Replace(' ','-'));}
         Check(true,"All pages and edit forms render at desktop and smaller laptop sizes");
+        using(var db=new SqliteConnection(new SqliteConnectionStringBuilder{DataSource=repo.DatabasePath,ForeignKeys=true,Pooling=false}.ToString()))
+        {
+            db.Open();using var tx=db.BeginTransaction();using var cmd=db.CreateCommand();cmd.Transaction=tx;
+            cmd.CommandText="INSERT INTO work_areas(client_id,name,status,notes,created_at,updated_at) VALUES($client,$name,0,'',$now,$now)";
+            cmd.Parameters.AddWithValue("$client",cid);var param=cmd.Parameters.Add("$name",SqliteType.Text);cmd.Parameters.AddWithValue("$now",DateTime.UtcNow.ToString("O"));
+            for(var i=0;i<1500;i++){param.Value="Volume check "+i;cmd.ExecuteNonQuery();}tx.Commit();
+        }
+        await store.ReloadAsync();shell.Navigate("Master Work Table");await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);window.UpdateLayout();
+        var largeGrid=Children<DataGrid>(window).Single();largeGrid.ScrollIntoView(shell.Master.Items[^1]);await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);window.UpdateLayout();
+        Check(shell.Master.Items.Count==1505&&Children<DataGridRow>(largeGrid).Count()<100,"Master table virtualises rows and scrolls through 1,505 work areas");
         var keep=store.Snapshot.WorkAreas.Count;window.Close();var reopened=new ApplicationStore(new Repository(repo.DatabasePath));await reopened.ReloadAsync();var window2=new MainWindow(reopened,false);window2.Show();await Capture(window2,"09-reopened");Check(reopened.Snapshot.WorkAreas.Count==keep&&reopened.Snapshot.WorkAreas.First(w=>w.Id==first.Id).Notes.Length>0,"Closing and reopening the WPF app preserves saved SQLite data");
         window2.Shell.Dialogs=dialogs;await window2.Shell.DeleteWorkAsync(reopened.Snapshot.Rows.First(w=>w.Id==first.Id));Check(reopened.Snapshot.WorkAreas.Count==keep-1,"Confirmed work deletion updates every connected view");
         await window2.Shell.DeleteClientAsync(reopened.Snapshot.Clients.First(c=>c.Id==cid));Check(!reopened.Snapshot.WorkAreas.Any(w=>w.ClientId==cid)&&reopened.Snapshot.Clients.Count==2,"Confirmed client deletion cascades its work and retains other clients");window2.Close();Directory.Delete(folder,true);
