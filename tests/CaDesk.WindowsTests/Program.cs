@@ -35,7 +35,8 @@ internal static class Program
         {
             try
             {
-                await Run();
+                if (args.Length > 1) await UpgradeVerification.Run(Path.GetFullPath(args[1]), Check);
+                else await Run();
                 if (bindingErrors.Count > 0)
                     throw new Exception("WPF binding errors: " + string.Join("\n", bindingErrors));
                 Check(true, "No WPF binding errors while rendering all pages and forms");
@@ -274,13 +275,14 @@ internal static class Program
         await store.UpdateStatusAsync(first.Id, WorkStatus.NotStarted);
         await store.UpdateDeadlineAsync(first.Id, today.AddDays(-2));
         Check(shell.Dashboard.Cards.Single(c => c.Label == "Overdue Work").Count == 1, "Dashboard overdue count excludes completed and future work");
+        await RunStudyNotes(window, store, dialogs, cid, today, folder);
         shell.Navigate("Dashboard");
         window.Width = 1920;
         window.Height = 1080;
         await Capture(window, "01-dashboard-1920", 1920, 1080);
         window.Width = 1420;
         window.Height = 900;
-        foreach (var page in new[] { "Dashboard", "Clients", "Master Work Table", "Settings" })
+        foreach (var page in new[] { "Dashboard", "Clients", "Master Work Table", "Settings", "Notes" })
         {
             shell.Navigate(page);
             await Capture(window, "02-" + page.Replace(' ', '-'));
@@ -307,7 +309,7 @@ internal static class Program
         clientForm.Close();
         window.Width = 1000;
         window.Height = 680;
-        foreach (var page in new[] { "Dashboard", "Master Work Table", "Calendar", "Clients", "Settings" })
+        foreach (var page in new[] { "Dashboard", "Master Work Table", "Calendar", "Clients", "Settings", "Notes" })
         {
             shell.Navigate(page);
             await Capture(window, "08-small-" + page.Replace(' ', '-'), 1000, 680);
@@ -345,12 +347,14 @@ internal static class Program
         ((Button)window.FindName("CloseButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Until(() => closedByCaption);
         Check(!window.IsVisible, "Close title-bar button closes the app window after saved work");
+        var noteCount = store.Snapshot.Notes.Count;
         var reopened = new ApplicationStore(new Repository(repo.DatabasePath));
         await reopened.ReloadAsync();
         var window2 = new MainWindow(reopened, false);
         window2.Show();
         await Capture(window2, "09-reopened");
         Check(reopened.Snapshot.WorkAreas.Count == keep && reopened.Snapshot.WorkAreas.First(w => w.Id == first.Id).Notes.Length > 0, "Closing and reopening the WPF app preserves saved SQLite data");
+        Check(reopened.Snapshot.Notes.Count == noteCount && reopened.Snapshot.Clients.Single(c => c.Id == cid).DueDate == today.AddDays(3), "Study notes and client due dates survive closing and reopening the actual Windows interface");
         window2.Shell.Dialogs = dialogs;
         await window2.Shell.DeleteWorkAsync(reopened.Snapshot.Rows.First(w => w.Id == first.Id));
         Check(reopened.Snapshot.WorkAreas.Count == keep - 1, "Confirmed work deletion updates every connected view");
@@ -359,6 +363,91 @@ internal static class Program
         window2.Close();
         Directory.Delete(folder, true);
     }
+    private static async Task RunStudyNotes(MainWindow window, ApplicationStore store, TestDialogs dialogs, long cid, DateOnly today, string folder)
+    {
+        var shell = window.Shell;
+        var client = store.Snapshot.Clients.Single(c => c.Id == cid);
+        var due = new ClientEditorViewModel(shell, client) { DueDate = today.AddDays(3).ToDateTime(TimeOnly.MinValue) };
+        due.SaveCommand.Execute(null);
+        await Until(() => store.Snapshot.Clients.Single(c => c.Id == cid).DueDate == today.AddDays(3));
+        var card = shell.Clients.Items.Single(c => c.Id == cid);
+        Check(card.DaysRemainingLabel == "3 days remaining", "Client editor saves a date and client cards display remaining calendar days");
+        shell.OpenClient(cid);
+        Check(((WorkTableViewModel)shell.CurrentPage).ClientDueLabel.Contains("3 days remaining"), "Client workspace shows its due date and remaining days");
+        var dueForm = new EditorWindow(new ClientEditorViewModel(shell, store.Snapshot.Clients.Single(c => c.Id == cid))) { Owner = window }; dueForm.Show();
+        await Dispatcher.Yield(DispatcherPriority.ApplicationIdle); dueForm.UpdateLayout();
+        Children<DatePickerTextBox>(dueForm).Single().Text = "invalid";
+        var dueVm = (ClientEditorViewModel)dueForm.DataContext; dueVm.SaveCommand.Execute(null); await Until(() => dueVm.HasError);
+        Check(store.Snapshot.Clients.Single(c => c.Id == cid).DueDate == today.AddDays(3), "Invalid client due date cannot overwrite its saved date"); dueForm.Close();
+        shell.Navigate("Notes");
+        Check(((Button)window.FindName("NotesNavigation")).IsVisible && shell.CurrentPage == shell.Notes && shell.Notes.IsEmpty, "Right-side notebook navigation opens the independent Notes page and helpful empty state");
+        shell.NewItemCommand.Execute(null); Check(dialogs.NoteEditorCalls == 1, "Ctrl+N context command creates a study note when Notes is active");
+        var beforeProgress = shell.Dashboard.Progress;
+        var vm = new NoteEditorViewModel(shell, null) { Heading = "Section 44AB — Tax Audit", Body = "Study turnover limits.\nLine two, apostrophe's and Unicode ₹." };
+        var form = new EditorWindow(vm, () => false) { Owner = window }; form.Show();
+        await Dispatcher.Yield(DispatcherPriority.ApplicationIdle); form.UpdateLayout();
+        Check(System.Windows.Input.Keyboard.FocusedElement is TextBox heading && System.Windows.Automation.AutomationProperties.GetName(heading) == "Note heading", "New note editor automatically focuses the heading field");
+        Check(vm.NoteDate == DateTime.Today && form.InputBindings.OfType<System.Windows.Input.KeyBinding>().Any(k => k.Key == System.Windows.Input.Key.S && k.Modifiers == System.Windows.Input.ModifierKeys.Control), "Note editor defaults to today and supplies Ctrl+S");
+        await Capture(form, "10-note-editor", 760, 820);
+        vm.SaveCommand.Execute(null); vm.SaveCommand.Execute(null);
+        await Until(() => store.Snapshot.Notes.Count == 1 && !form.IsVisible);
+        Check(store.Snapshot.Notes[0].Body == vm.Body && store.Snapshot.Notes[0].Heading == vm.Heading, "Saving multiline study notes preserves content and duplicate submissions create only one record");
+        var empty = new NoteEditorViewModel(shell, null) { Heading = "GST Registration", Body = "" }; empty.SaveCommand.Execute(null); await Until(() => store.Snapshot.Notes.Count == 2);
+        Check(store.Snapshot.Notes.All(n => n.NoteDate == today) && shell.Dashboard.Progress == beforeProgress, "Multiple same-date notes and empty bodies are supported without changing work statistics");
+        var invalid = new NoteEditorViewModel(shell, null); invalid.SaveCommand.Execute(null); await Until(() => invalid.HasError);
+        Check(invalid.Error.Contains("heading") && store.Snapshot.Notes.Count == 2, "Blank study-note heading is rejected");
+        var guarded = new EditorWindow(new NoteEditorViewModel(shell, store.Snapshot.Notes[0]), () => false) { Owner = window }; guarded.Show();
+        var guardVm = (NoteEditorViewModel)guarded.DataContext; var originalBody = guardVm.Body; guardVm.Body += "unsaved"; guarded.Close();
+        Check(guarded.IsVisible, "Closing a note with unsaved changes respects the discard warning"); guardVm.Body = originalBody; guarded.Close();
+        var badDateVm = new NoteEditorViewModel(shell, store.Snapshot.Notes[0]); var badDate = new EditorWindow(badDateVm, () => true) { Owner = window }; badDate.Show();
+        await Dispatcher.Yield(DispatcherPriority.ApplicationIdle); badDate.UpdateLayout(); Children<DatePickerTextBox>(badDate).Single().Text = "invalid";
+        badDateVm.SaveCommand.Execute(null); await Until(() => badDateVm.HasError);
+        Check(badDateVm.Error.Contains("valid date"), "Invalid typed study-note date blocks saving"); badDate.Close();
+        shell.Navigate("Notes"); await Dispatcher.Yield(DispatcherPriority.ApplicationIdle); window.UpdateLayout();
+        var search = Children<TextBox>(window).Single(b => System.Windows.Automation.AutomationProperties.GetName(b) == "Search study notes");
+        search.Text = "44ab"; Check(shell.Notes.Items.Count == 1, "Note search matches headings instantly and ignores case");
+        search.Text = "TURNOVER"; Check(shell.Notes.Items.Count == 1, "Note search also matches body text"); search.Text = "";
+        shell.Navigate("Calendar"); shell.Calendar.Date = DateTime.Today; shell.Calendar.ClientFilter = null;
+        foreach (var mode in Enum.GetValues<CalendarMode>())
+        {
+            shell.Calendar.Mode = mode; shell.Calendar.DisplayFilter = CalendarDisplayFilter.Everything;
+            if (mode == CalendarMode.Month) Check(shell.Calendar.Days.Single(d => d.Date == today).ExtraCount == 3, "Mixed month-calendar overflow counts both work deadlines and study notes");
+            shell.Calendar.DisplayFilter = CalendarDisplayFilter.StudyNotes;
+            Check(shell.Calendar.Days.Sum(d => d.Items.Count) == 2 && shell.Calendar.Days.SelectMany(d => d.Items).All(e => e.IsStudyNote && e.Color == "#8B5CF6" && e.StatusLabel == ""), $"{mode} displays purple notes without work statuses");
+            shell.Calendar.DisplayFilter = CalendarDisplayFilter.ClientDeadlines;
+            Check(shell.Calendar.Days.SelectMany(d => d.Items).All(e => e.IsWork), $"{mode} Client Deadlines Only hides notes");
+            shell.Calendar.DisplayFilter = CalendarDisplayFilter.Everything; shell.Calendar.ClientFilter = store.Snapshot.Clients.First(c => c.Id != cid).Id;
+            Check(shell.Calendar.Days.Sum(d => d.Items.Count) == 2, $"{mode} client filter keeps personal study notes visible"); shell.Calendar.ClientFilter = null;
+        }
+        shell.Calendar.DisplayFilter = CalendarDisplayFilter.StudyNotes; shell.Calendar.Mode = CalendarMode.Day;
+        var entry = shell.Calendar.Days.Single().Items.First(e => e.Name.Contains("44AB")); entry.OpenCommand.Execute(null);
+        Check(dialogs.LastNote?.Heading == vm.Heading, "Clicking a calendar note opens the corresponding full study note");
+        var noteId = dialogs.LastNote!.Id;
+        var edited = new NoteEditorViewModel(shell, dialogs.LastNote) { Heading = "Revised Audit", Body = "Edited body\nLine two", NoteDate = today.AddDays(1).ToDateTime(TimeOnly.MinValue) };
+        edited.SaveCommand.Execute(null); await Until(() => store.Snapshot.Notes.Single(n => n.Id == noteId).NoteDate == today.AddDays(1));
+        Check(shell.Calendar.Days.Single().Items.All(e => e.Id != noteId), "Changing a note date immediately removes its previous calendar entry");
+        shell.Calendar.Date = today.AddDays(1).ToDateTime(TimeOnly.MinValue);
+        Check(shell.Calendar.Days.Single().Items.Single().Name == "Revised Audit" && shell.Notes.Items[0].Id == noteId, "Date edits move the note to the new day and update newest-first sorting");
+        dialogs.AllowDelete = false; await shell.DeleteNoteAsync(store.Snapshot.Notes.Single(n => n.Id == noteId));
+        Check(shell.Calendar.Days.Single().Items.Count == 1, "Cancelling note deletion preserves the note and calendar entry");
+        dialogs.AllowDelete = true; await shell.DeleteNoteAsync(store.Snapshot.Notes.Single(n => n.Id == noteId));
+        Check(shell.Calendar.Days.Single().IsEmpty && store.Snapshot.WorkAreas.Count == 5, "Confirmed note deletion removes its calendar entry and preserves client work");
+        await store.SaveNoteAsync(null, "Section 44AB — Tax Audit", "Study turnover limits.\nLine two.", today);
+        shell.Calendar.Date = DateTime.Today; shell.Calendar.DisplayFilter = CalendarDisplayFilter.Everything; shell.Calendar.Mode = CalendarMode.Week;
+        shell.Clients.TableView = true; await store.ReloadAsync();
+        var prefs = new ShellViewModel(new ApplicationStore(new Repository(store.Repository.DatabasePath)));
+        await prefs.Store.ReloadAsync();
+        Check(prefs.Calendar.Mode == CalendarMode.Week && prefs.Calendar.DisplayFilter == CalendarDisplayFilter.Everything && prefs.Clients.TableView, "Calendar and client-view preferences persist across application restart");
+        var backup = Path.Combine(folder, "manual-export.db"); await shell.Settings.ExportAsync(backup);
+        Check(File.Exists(backup) && shell.Settings.Message.Contains("saved"), "Settings Export Backup creates a verified complete database");
+        var asks = dialogs.ConfirmCalls; var bad = Path.Combine(folder, "invalid.db"); File.WriteAllText(bad, "invalid backup"); await shell.Settings.RestoreAsync(bad);
+        Check(dialogs.ConfirmCalls == asks && shell.Settings.Message.Contains("healthy"), "Settings rejects a corrupt backup before asking for replacement confirmation");
+        dialogs.AllowDelete = false; await shell.Settings.RestoreAsync(backup);
+        Check(shell.Settings.Message.Contains("cancelled"), "Cancelled Settings restore keeps current data"); dialogs.AllowDelete = true;
+        await store.SaveNoteAsync(null, "Temporary after export", "", today); await shell.Settings.RestoreAsync(backup);
+        Check(store.Snapshot.Notes.Count == 2 && shell.Settings.Message.Contains("verified") && store.Snapshot.WorkAreas.Count == 5, "Settings restore replaces data only after confirmation and refreshes every connected view");
+        shell.Clients.TableView = false; shell.Calendar.Mode = CalendarMode.Month;
+    }
     private sealed class TestDialogs : IDialogService
     {
         public WorkRow? LastWork
@@ -366,13 +455,15 @@ internal static class Program
             get; private set;
         }
         public bool AllowDelete { get; set; } = true;
-        public void EditNote(StudyNote? note) { LastNote = note; }
+        public void EditNote(StudyNote? note) { LastNote = note; NoteEditorCalls++; }
+        public int NoteEditorCalls { get; private set; }
+        public int ConfirmCalls { get; private set; }
         public StudyNote? LastNote { get; private set; }
         public void EditClient(Client? client)
         {
         }
         public void EditWork(WorkRow? work, long? clientId = null) => LastWork = work;
-        public bool Confirm(string title, string description) => AllowDelete;
+        public bool Confirm(string title, string description) { ConfirmCalls++; return AllowDelete; }
     }
     private sealed class CaptureTrace : TraceListener
     {

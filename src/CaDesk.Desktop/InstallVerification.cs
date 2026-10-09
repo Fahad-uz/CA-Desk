@@ -22,7 +22,7 @@ internal static class InstallVerification
             try
             {
                 await store.ReloadAsync();
-                await store.SaveClientAsync(null, "Portable launch test", "");
+                await store.SaveClientAsync(null, "Portable launch test", "", DateOnly.FromDateTime(DateTime.Today).AddDays(5));
                 var c = store.Snapshot.Clients.Single();
                 await store.SaveWorkAsync(null, c.Id, "Persistence check", WorkStatus.NotStarted, DateOnly.FromDateTime(DateTime.Today), "Isolated package verification");
                 var work = store.Snapshot.WorkAreas.Single();
@@ -30,6 +30,16 @@ internal static class InstallVerification
                 var reopened = new Repository(path).Load();
                 if (reopened.WorkAreas.Single().Status != WorkStatus.Completed || window.Shell.Dashboard.Progress.Percentage != 100)
                     throw new InvalidOperationException("Packaged persistence check failed.");
+                var today = DateOnly.FromDateTime(DateTime.Today);
+                await store.SaveNoteAsync(null, "Packaged study note", "First line\nSecond line", today);
+                var backup = Path.Combine(folder, "packaged-export.db"); await store.ExportBackupAsync(backup);
+                await store.DeleteClientAsync(c.Id); await store.DeleteNoteAsync(store.Snapshot.Notes.Single().Id);
+                await store.RestoreBackupAsync(backup);
+                var restored = new Repository(path).Load();
+                window.Shell.Calendar.Mode = ViewModels.CalendarMode.Day;
+                if (restored.Clients.Single().DueDate != today.AddDays(5) || restored.Notes.Single().Body != "First line\nSecond line" || window.Shell.Calendar.Days.Single().Items.Count != 2 || window.Shell.Dashboard.Progress.Percentage != 100)
+                    throw new InvalidOperationException("Packaged notes, due dates, backup or calendar verification failed.");
+                window.Shell.Navigate("Notes");
                 var minimize = (Button)window.FindName("MinimizeButton");
                 var maximize = (Button)window.FindName("MaximizeRestoreButton");
                 if (!minimize.IsVisible || !maximize.IsVisible || !((Button)window.FindName("CloseButton")).IsVisible)
@@ -57,7 +67,7 @@ internal static class InstallVerification
                     await Task.Delay(25);
                 if (!closed)
                     throw new InvalidOperationException("Packaged Close button did not close the window.");
-                File.WriteAllText(Path.Combine(folder, "result.txt"), "PASS: Published self-contained win-x64 executable launched, rendered WPF, wrote SQLite, reopened it, updated dashboard progress and operated Minimize, Maximize, Restore and Close title-bar buttons.");
+                File.WriteAllText(Path.Combine(folder, "result.txt"), "PASS: Published self-contained win-x64 executable launched, rendered WPF, wrote SQLite, reopened it, preserved study notes and client due dates, exported/restored a verified backup, updated the calendar and dashboard progress and operated Minimize, Maximize, Restore and Close title-bar buttons.");
                 app.Shutdown(0);
             }
             catch (Exception e) { File.WriteAllText(Path.Combine(folder, "failure.txt"), e.ToString()); app.Shutdown(1); }
