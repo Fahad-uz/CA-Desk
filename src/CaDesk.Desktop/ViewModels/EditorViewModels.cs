@@ -75,6 +75,8 @@ public sealed class ClientEditorViewModel : EditorViewModel
 }
 public sealed class WorkEditorViewModel : EditorViewModel
 {
+    public const string InvalidDateMessage = "Enter a valid date, or choose one from the calendar. Clear the field for no deadline.";
+    public bool DeadlineInputValid { get; set; } = true;
     private readonly long? id;
     public override string Title => id is null ? "Add work area" : "Work area details";
     public IReadOnlyList<ClientOption> Clients
@@ -128,6 +130,8 @@ public sealed class WorkEditorViewModel : EditorViewModel
     }
     protected override Task SaveAsync()
     {
+        if (!DeadlineInputValid)
+            throw new ValidationException(InvalidDateMessage);
         if (ClientId is null)
             throw new ValidationException("Please choose a client.");
         return Shell.Store.SaveWorkAsync(id, ClientId.Value, Name, Status, Deadline is { } d ? DateOnly.FromDateTime(d) : null, Notes);

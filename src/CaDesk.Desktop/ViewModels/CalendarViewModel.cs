@@ -81,6 +81,10 @@ public sealed class CalendarViewModel : Observable
                 Refresh();
         }
     }
+    public ClientOption? SelectedClient
+    {
+        get => ClientOptions.FirstOrDefault(o => o.Value == ClientFilter) ?? ClientOptions.FirstOrDefault(); set => ClientFilter = value?.Value;
+    }
     public IReadOnlyList<ClientOption> ClientOptions { get; private set; } = [];
     public IReadOnlyList<CalendarDay> Days { get; private set; } = [];
     public string Title => Mode switch { CalendarMode.Month => Date.ToString("MMMM yyyy"), CalendarMode.Week => $"Week of {WorkQueries.WeekStart(DateOnly.FromDateTime(Date)):d MMM yyyy}", _ => Date.ToString("dddd, d MMMM yyyy") };
@@ -146,7 +150,7 @@ public sealed class CalendarViewModel : Observable
         };
         var grouped = shell.Store.Snapshot.Rows.Where(w => w.Deadline != null && (client == null || w.Client.Id == client)).ToLookup(w => w.Deadline!.Value);
         Days = Enumerable.Range(0, count).Select(i => new CalendarDay(start.AddDays(i), selected, grouped[start.AddDays(i)], this, shell, IsMonth)).ToArray();
-        foreach (var p in new[] { nameof(Days), nameof(Title), nameof(IsMonth), nameof(IsAgenda), nameof(ResultLabel) })
+        foreach (var p in new[] { nameof(Days), nameof(Title), nameof(IsMonth), nameof(IsAgenda), nameof(ResultLabel), nameof(SelectedClient) })
             Raise(p);
     }
 }

@@ -9,6 +9,7 @@ public sealed class WorkItemViewModel : Observable
     {
         get;
     }
+    public void ReportInvalidDate() => shell.ReportError(new ValidationException(WorkEditorViewModel.InvalidDateMessage));
     public long Id => Row.Id;
     public string ClientName => Row.ClientName;
     public string Name => Row.Name;
@@ -76,6 +77,7 @@ public sealed class WorkTableViewModel : Observable
         get;
     }
     public bool IsWorkspace => FixedClientId != null;
+    public bool IsMaster => !IsWorkspace;
     private string search = "";
     public string Search
     {
@@ -91,8 +93,19 @@ public sealed class WorkTableViewModel : Observable
         get => status; set
         {
             if (Set(ref status, value))
+            {
+                Raise(nameof(SelectedStatusFilter));
                 Refresh();
+            }
         }
+    }
+    public StatusFilterOption? SelectedStatusFilter
+    {
+        get => Options.StatusFilters.First(o => o.Value == StatusFilter); set => StatusFilter = value?.Value;
+    }
+    public ClientOption? SelectedClient
+    {
+        get => ClientOptions.FirstOrDefault(o => o.Value == ClientFilter) ?? ClientOptions.FirstOrDefault(); set => ClientFilter = value?.Value;
     }
     private DeadlineFilter deadline;
     public DeadlineFilter DeadlineFilter
@@ -185,7 +198,7 @@ public sealed class WorkTableViewModel : Observable
         }
         Items = WorkQueries.Filter(shell.Store.Snapshot.Rows, new(Search, StatusFilter, DeadlineFilter, FixedClientId ?? ClientFilter, sort, descending), DateOnly.FromDateTime(DateTime.Today)).Select(row => new WorkItemViewModel(row, shell)).ToArray();
         Progress = Progress.From(shell.Store.Snapshot.WorkAreas.Where(w => FixedClientId == null || w.ClientId == FixedClientId));
-        foreach (var p in new[] { nameof(Items), nameof(Progress), nameof(Title), nameof(Subtitle), nameof(ResultLabel), nameof(IsEmpty), nameof(SortLabel) })
+        foreach (var p in new[] { nameof(Items), nameof(Progress), nameof(Title), nameof(Subtitle), nameof(ResultLabel), nameof(IsEmpty), nameof(SortLabel), nameof(SelectedStatusFilter), nameof(SelectedClient) })
             Raise(p);
     }
 }

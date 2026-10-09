@@ -166,6 +166,7 @@
     </Setter>
   </Style>
   <Style TargetType="DatePicker">
+    <Setter Property="c:DateInput.Validate" Value="True"/>
     <Setter Property="FontSize" Value="12"/>
     <Setter Property="Foreground" Value="#0F172A"/>
     <Setter Property="BorderBrush" Value="{StaticResource Line}"/>

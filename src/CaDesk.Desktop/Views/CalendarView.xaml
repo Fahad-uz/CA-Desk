@@ -11,7 +11,7 @@
         <TextBlock Text="Calendar" Style="{StaticResource PageTitle}"/>
         <TextBlock Text="Your deadlines, clearly mapped out." Style="{StaticResource Caption}" Margin="0,8,0,0"/>
       </StackPanel>
-      <ComboBox ItemsSource="{Binding ClientOptions}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding ClientFilter}" Width="220" HorizontalAlignment="Right" VerticalAlignment="Top" AutomationProperties.Name="Calendar client filter"/>
+      <ComboBox ItemsSource="{Binding ClientOptions}" DisplayMemberPath="Label" SelectedItem="{Binding SelectedClient}" Width="220" HorizontalAlignment="Right" VerticalAlignment="Top" AutomationProperties.Name="Calendar client filter"/>
     </DockPanel>
     <Grid Grid.Row="1" Margin="0,0,0,18">
       <Grid.ColumnDefinitions>

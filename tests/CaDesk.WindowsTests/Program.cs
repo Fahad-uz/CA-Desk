@@ -92,6 +92,10 @@ internal static class Program
             surface.Measure(new Size(width, height));
             surface.Arrange(new Rect(0, 0, width, height));
             surface.UpdateLayout();
+            await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
+            surface.Measure(new Size(width, height));
+            surface.Arrange(new Rect(0, 0, width, height));
+            surface.UpdateLayout();
             if (Math.Abs(surface.ActualWidth - width) > 0.5 || Math.Abs(surface.ActualHeight - height) > 0.5)
                 throw new Exception($"Requested {width}x{height}, rendered {surface.ActualWidth}x{surface.ActualHeight}.");
             var bitmap = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
@@ -153,6 +157,19 @@ internal static class Program
             await Until(() => store.Snapshot.WorkAreas.Count == expected);
         }
         Check(store.Snapshot.WorkAreas.All(w => w.Status == WorkStatus.NotStarted), "Multiple custom work areas default to Not Started");
+        var invalidEditor = new WorkEditorViewModel(shell, store.Snapshot.Rows[0], null);
+        var validationWindow = new EditorWindow(invalidEditor) { Owner = window };
+        validationWindow.Show();
+        await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
+        validationWindow.UpdateLayout();
+        var dateInput = Children<DatePickerTextBox>(validationWindow).Single();
+        dateInput.Text = "invalid date";
+        invalidEditor.SaveCommand.Execute(null);
+        await Until(() => invalidEditor.HasError);
+        Check(invalidEditor.Error.Contains("valid date"), "Invalid typed dates block form saving with a helpful message");
+        dateInput.Text = today.ToDateTime(TimeOnly.MinValue).ToShortDateString();
+        Check(invalidEditor.DeadlineInputValid, "Correcting a typed date clears its validation state");
+        validationWindow.Close();
         var first = store.Snapshot.WorkAreas.First();
         var row = store.Snapshot.Rows.First(w => w.Id == first.Id);
         var edit = new WorkEditorViewModel(shell, row, null) { Name = "GST Filing — review", Notes = "Updated notes\nSecond line", Deadline = today.AddDays(-1).ToDateTime(TimeOnly.MinValue) };
@@ -192,6 +209,9 @@ internal static class Program
         Check(shell.Master.Items.Count == 0 && shell.Master.Search == "GST" && shell.Master.StatusFilter == WorkStatus.InProgress, "Active master filters are preserved after saving an edit");
         shell.Master.ResetCommand.Execute(null);
         Check(shell.Master.Items.Count == 5, "Reset Filters restores all work areas");
+        await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
+        var statusFilterControl = Children<ComboBox>(window).Single(b => System.Windows.Automation.AutomationProperties.GetName(b) == "Filter by status");
+        Check(statusFilterControl.SelectedItem is StatusFilterOption { Value: null }, "Reset shows the All Statuses selection clearly");
         foreach (var sort in Enum.GetValues<WorkSort>())
         {
             shell.Master.SortBy(sort);

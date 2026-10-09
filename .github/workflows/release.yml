@@ -46,6 +46,11 @@ jobs:
       - name: Build and launch the self-contained Windows package
         shell: pwsh
         run: ./scripts/Publish.ps1 -Version $env:RELEASE_VERSION
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Windows-portable-release
+          path: artifacts/CA-Desk-v*-win-x64.zip*
+          compression-level: 0
       - name: Save development history
         run: git bundle create artifacts/CA-Desk-source.bundle --all
       - uses: actions/upload-artifact@v4

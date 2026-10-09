@@ -34,9 +34,9 @@
         <Button Grid.Column="1" Content="×" Command="{Binding ClearSearchCommand}" Margin="8,0,0,0" ToolTip="Clear search"/>
       </Grid>
       <WrapPanel Margin="0,12,0,0">
-        <ComboBox ItemsSource="{x:Static vm:Options.StatusFilters}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding StatusFilter}" Width="145" Margin="0,0,10,8" AutomationProperties.Name="Filter by status"/>
+        <ComboBox ItemsSource="{x:Static vm:Options.StatusFilters}" DisplayMemberPath="Label" SelectedItem="{Binding SelectedStatusFilter}" Width="145" Margin="0,0,10,8" AutomationProperties.Name="Filter by status"/>
         <ComboBox ItemsSource="{x:Static vm:Options.Deadlines}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding DeadlineFilter}" Width="145" Margin="0,0,10,8" AutomationProperties.Name="Filter by deadline"/>
-        <ComboBox ItemsSource="{Binding ClientOptions}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding ClientFilter}" Width="185" Margin="0,0,10,8" AutomationProperties.Name="Filter by client"/>
+        <ComboBox Visibility="{Binding IsMaster,Converter={StaticResource Visible}}" ItemsSource="{Binding ClientOptions}" DisplayMemberPath="Label" SelectedItem="{Binding SelectedClient}" Width="185" MinWidth="185" Margin="0,0,10,8" AutomationProperties.Name="Filter by client"/>
         <Button Content="Reset Filters" Command="{Binding ResetCommand}" Style="{StaticResource Link}" Margin="4,0,0,8"/>
       </WrapPanel>
       <DockPanel>
@@ -46,9 +46,9 @@
     </StackPanel>
     <Border Grid.Row="3" Style="{StaticResource Card}" Padding="0">
       <Grid>
-        <DataGrid x:Name="WorkGrid" ItemsSource="{Binding Items}" Sorting="OnSorting">
+        <DataGrid x:Name="WorkGrid" RowHeight="68" ItemsSource="{Binding Items}" Sorting="OnSorting">
           <DataGrid.Columns>
-            <DataGridTemplateColumn Header="Client" SortMemberPath="Client" CanUserSort="True" Width="160" MinWidth="140">
+            <DataGridTemplateColumn Header="Client" SortMemberPath="Client" CanUserSort="True" Width="160" MinWidth="160">
               <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate>
                   <Button Command="{Binding OpenClientCommand}" Style="{StaticResource Link}">
@@ -69,14 +69,14 @@
                 </DataTemplate>
               </DataGridTemplateColumn.CellTemplate>
             </DataGridTemplateColumn>
-            <DataGridTemplateColumn Header="Status" SortMemberPath="Status" CanUserSort="True" Width="165">
+            <DataGridTemplateColumn Header="Status" SortMemberPath="Status" CanUserSort="True" Width="165" MinWidth="165">
               <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate>
                   <ComboBox ItemsSource="{x:Static vm:Options.Statuses}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding Status,UpdateSourceTrigger=PropertyChanged}" Foreground="{Binding Status,Converter={StaticResource StatusBrush}}" AutomationProperties.Name="Work status"/>
                 </DataTemplate>
               </DataGridTemplateColumn.CellTemplate>
             </DataGridTemplateColumn>
-            <DataGridTemplateColumn Header="Deadline" SortMemberPath="Deadline" CanUserSort="True" Width="185">
+            <DataGridTemplateColumn Header="Deadline" SortMemberPath="Deadline" CanUserSort="True" Width="185" MinWidth="185">
               <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate>
                   <StackPanel>
@@ -100,7 +100,7 @@
                 </DataTemplate>
               </DataGridTemplateColumn.CellTemplate>
             </DataGridTemplateColumn>
-            <DataGridTemplateColumn Header="Notes" Width="130">
+            <DataGridTemplateColumn Header="Notes" Width="130" MinWidth="130">
               <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate>
                   <Button Command="{Binding OpenCommand}" Style="{StaticResource Link}" ToolTip="View or edit notes">
@@ -112,7 +112,7 @@
                 </DataTemplate>
               </DataGridTemplateColumn.CellTemplate>
             </DataGridTemplateColumn>
-            <DataGridTemplateColumn Header="Actions" Width="132">
+            <DataGridTemplateColumn Header="Actions" Width="132" MinWidth="132">
               <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate>
                   <StackPanel Orientation="Horizontal">
