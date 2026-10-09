@@ -130,6 +130,15 @@ public sealed class WorkTableViewModel : Observable
     public Progress Progress { get; private set; } = Progress.From([]);
     public string Title => FixedClientId is { } id ? shell.Store.Snapshot.Clients.FirstOrDefault(c => c.Id == id)?.Name ?? "Client workspace" : "Master Work Table";
     public string Subtitle => FixedClientId is { } id ? shell.Store.Snapshot.Clients.FirstOrDefault(c => c.Id == id)?.Description ?? "" : "Every client. Every work area. One clear view.";
+    public string ClientDueLabel
+    {
+        get
+        {
+            var c = shell.Store.Snapshot.Clients.FirstOrDefault(c => c.Id == FixedClientId);
+            return c?.DueDate is { } date ? $"Client due date: {date:d MMM yyyy} · {ClientDueDates.Remaining(c)}" : "No client due date";
+        }
+    }
+    public string ClientDueColor => shell.Store.Snapshot.Clients.FirstOrDefault(c => c.Id == FixedClientId)?.DaysRemaining(DateOnly.FromDateTime(DateTime.Today)) < 0 ? "#DC2626" : "#64748B";
     public string ResultLabel => $"Showing {Items.Count} of {TotalCount} work areas";
     public int TotalCount => FixedClientId is { } id ? shell.Store.Snapshot.WorkAreas.Count(w => w.ClientId == id) : shell.Store.Snapshot.WorkAreas.Count;
     public bool IsEmpty => Items.Count == 0;
@@ -198,7 +207,7 @@ public sealed class WorkTableViewModel : Observable
         }
         Items = WorkQueries.Filter(shell.Store.Snapshot.Rows, new(Search, StatusFilter, DeadlineFilter, FixedClientId ?? ClientFilter, sort, descending), DateOnly.FromDateTime(DateTime.Today)).Select(row => new WorkItemViewModel(row, shell)).ToArray();
         Progress = Progress.From(shell.Store.Snapshot.WorkAreas.Where(w => FixedClientId == null || w.ClientId == FixedClientId));
-        foreach (var p in new[] { nameof(Items), nameof(Progress), nameof(Title), nameof(Subtitle), nameof(ResultLabel), nameof(IsEmpty), nameof(SortLabel), nameof(SelectedStatusFilter), nameof(SelectedClient) })
+        foreach (var p in new[] { nameof(Items), nameof(Progress), nameof(Title), nameof(Subtitle), nameof(ClientDueLabel), nameof(ClientDueColor), nameof(ResultLabel), nameof(IsEmpty), nameof(SortLabel), nameof(SelectedStatusFilter), nameof(SelectedClient) })
             Raise(p);
     }
 }

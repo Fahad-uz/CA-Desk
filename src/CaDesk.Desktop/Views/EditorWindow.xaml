@@ -5,6 +5,9 @@
       <StackPanel>
         <TextBlock Text="Client name" FontWeight="SemiBold" Margin="0,0,0,8"/>
         <TextBox Text="{Binding Name,UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Client name"/>
+        <TextBlock Text="Client due date (optional)" FontWeight="SemiBold" Margin="0,22,0,8"/>
+        <DatePicker SelectedDate="{Binding DueDate}" AutomationProperties.Name="Client due date"/>
+        <Button Content="Remove due date" Command="{Binding ClearDueDateCommand}" Style="{StaticResource Link}" HorizontalAlignment="Left" FontSize="11"/>
         <TextBlock Text="Description / notes" FontWeight="SemiBold" Margin="0,22,0,8"/>
         <TextBox Text="{Binding Description,UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="180" VerticalContentAlignment="Top" AutomationProperties.Name="Client notes"/>
         <TextBlock Text="A simple workspace to keep this client's work organised." Style="{StaticResource Caption}" Margin="0,18,0,0"/>

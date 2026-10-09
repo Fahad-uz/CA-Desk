@@ -8,6 +8,10 @@ public sealed class ClientCardViewModel(Client client, IEnumerable<WorkArea> wor
     public long Id => Client.Id;
     public string Name => Client.Name;
     public string Description => Client.Description;
+    public string DueDateLabel => Client.DueDate?.ToString("d MMM yyyy") ?? "No due date";
+    public string DaysRemainingLabel => ClientDueDates.Remaining(Client);
+    public bool IsOverdue => Client.DaysRemaining(DateOnly.FromDateTime(DateTime.Today)) < 0;
+    public string DueColor => IsOverdue ? "#DC2626" : "#64748B";
     public string Initials => string.Concat(Client.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(s => s[0])).ToUpperInvariant();
     public Progress Progress { get; } = Progress.From(works);
     public ICommand OpenCommand { get; } = new RelayCommand(_ => shell.OpenClient(client.Id));
@@ -48,4 +52,13 @@ public sealed class ClientsViewModel(ShellViewModel shell) : Observable
         Raise(nameof(IsEmpty));
         Raise(nameof(ResultLabel));
     }
+}
+
+public static class ClientDueDates
+{
+    public static string Remaining(Client client) => client.DaysRemaining(DateOnly.FromDateTime(DateTime.Today)) switch
+    {
+        null => "", 0 => "Due today", 1 => "1 day remaining", -1 => "Overdue by 1 day",
+        < 0 and var days => $"Overdue by {-days} days", var days => $"{days} days remaining"
+    };
 }

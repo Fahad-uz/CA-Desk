@@ -22,9 +22,9 @@ public static class DateInput
         picker.DateValidationError += (_, e) =>
         {
             e.ThrowException = false;
-            if (picker.DataContext is WorkEditorViewModel editor)
+            if (picker.DataContext is EditorViewModel editor)
             {
-                editor.DeadlineInputValid = false;
+                editor.DateInputValid = false;
                 editor.Error = WorkEditorViewModel.InvalidDateMessage;
             }
             else if (picker.DataContext is WorkItemViewModel item)
@@ -44,11 +44,11 @@ public static class DateInput
     private static void OnTextChanged(object sender, TextChangedEventArgs args)
     {
         var input = (DatePickerTextBox)sender;
-        if (input.DataContext is not WorkEditorViewModel editor)
+        if (input.DataContext is not EditorViewModel editor)
             return;
-        editor.DeadlineInputValid = string.IsNullOrWhiteSpace(input.Text) ||
+        editor.DateInputValid = string.IsNullOrWhiteSpace(input.Text) ||
             DateTime.TryParse(input.Text, CultureInfo.CurrentCulture, DateTimeStyles.None, out _);
-        if (editor.DeadlineInputValid && editor.Error == WorkEditorViewModel.InvalidDateMessage)
+        if (editor.DateInputValid && editor.Error == WorkEditorViewModel.InvalidDateMessage)
             editor.Error = "";
     }
 }

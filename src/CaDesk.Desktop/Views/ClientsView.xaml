@@ -44,6 +44,8 @@
                     <TextBlock Text="{Binding Name}" FontSize="16" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" MaxWidth="200"/>
                   </Button>
                 </DockPanel>
+                <TextBlock Text="{Binding DueDateLabel,StringFormat=Due: {0}}" Style="{StaticResource Caption}" Margin="0,16,0,3"/>
+                <TextBlock Text="{Binding DaysRemainingLabel}" Foreground="{Binding DueColor}" FontSize="12"/>
                 <TextBlock Text="{Binding Progress.Label}" Style="{StaticResource Caption}" Margin="0,24,0,8"/>
                 <ProgressBar c:SmoothProgress.Value="{Binding Progress.Percentage,Mode=OneWay}"/>
                 <UniformGrid Columns="3" Margin="0,20,0,20">
@@ -85,6 +87,8 @@
               </DataTemplate>
             </DataGridTemplateColumn.CellTemplate>
           </DataGridTemplateColumn>
+          <DataGridTextColumn Header="Due date" Binding="{Binding DueDateLabel}" Width="125"/>
+          <DataGridTextColumn Header="Days remaining" Binding="{Binding DaysRemainingLabel}" Width="150"/>
           <DataGridTextColumn Header="Work areas" Binding="{Binding Progress.Total}" Width="100"/>
           <DataGridTextColumn Header="Completed" Binding="{Binding Progress.Completed}" Width="100"/>
           <DataGridTextColumn Header="In progress" Binding="{Binding Progress.InProgress}" Width="100"/>

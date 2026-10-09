@@ -39,6 +39,7 @@ public abstract class EditorViewModel : Observable
         }
     }
     public bool HasError => Error.Length > 0;
+    public bool DateInputValid { get; set; } = true;
     public abstract string Title
     {
         get;
@@ -70,13 +71,25 @@ public sealed class ClientEditorViewModel : EditorViewModel
     {
         get => description; set => Set(ref description, value);
     }
-    public ClientEditorViewModel(ShellViewModel shell, Client? client) : base(shell) { id = client?.Id; name = client?.Name ?? ""; description = client?.Description ?? ""; }
-    protected override Task SaveAsync() => Shell.Store.SaveClientAsync(id, Name, Description);
+    private DateTime? dueDate;
+    public DateTime? DueDate { get => dueDate; set => Set(ref dueDate, value); }
+    public ICommand ClearDueDateCommand { get; }
+    public ClientEditorViewModel(ShellViewModel shell, Client? client) : base(shell)
+    {
+        id = client?.Id; name = client?.Name ?? ""; description = client?.Description ?? "";
+        dueDate = client?.DueDate?.ToDateTime(TimeOnly.MinValue);
+        ClearDueDateCommand = new RelayCommand(_ => DueDate = null);
+    }
+    protected override Task SaveAsync()
+    {
+        if (!DateInputValid) throw new ValidationException(WorkEditorViewModel.InvalidDateMessage);
+        return Shell.Store.SaveClientAsync(id, Name, Description, DueDate is { } d ? DateOnly.FromDateTime(d) : null);
+    }
 }
 public sealed class WorkEditorViewModel : EditorViewModel
 {
     public const string InvalidDateMessage = "Enter a valid date, or choose one from the calendar. Clear the field for no deadline.";
-    public bool DeadlineInputValid { get; set; } = true;
+    public bool DeadlineInputValid { get => DateInputValid; set => DateInputValid = value; }
     private readonly long? id;
     public override string Title => id is null ? "Add work area" : "Work area details";
     public IReadOnlyList<ClientOption> Clients
