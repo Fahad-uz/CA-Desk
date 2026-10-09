@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CaDesk.Core/CaDesk.Core.csproj" />
+    <Project Path="src/CaDesk.Desktop/CaDesk.Desktop.csproj" />
+  </Folder>
+</Solution>

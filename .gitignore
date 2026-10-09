@@ -1,0 +1,13 @@
+**/bin/
+**/obj/
+.vs/
+.idea/
+*.user
+*.suo
+*.db
+*.db-*
+*.sqlite*
+*.log
+TestResults/
+artifacts/
+.DS_Store
