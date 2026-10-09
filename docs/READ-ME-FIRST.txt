@@ -1,0 +1,33 @@
+CA DESK 1.0.0 - WINDOWS (64-BIT)
+
+1. Extract ALL files from CA-Desk-v1.0.0-win-x64.zip into a folder.
+2. Open that folder and double-click CA-Desk.exe.
+3. Click Add Client, then open its workspace and add work areas.
+
+No installation, administrator access, .NET download, account or internet
+connection is needed to use the application. Keep all extracted files together.
+The application begins with an empty workspace.
+
+Changes are automatically saved in:
+%LOCALAPPDATA%\CA Desk\ca-desk.db
+
+To update: close CA Desk, extract the newer release into a new folder and
+launch its CA-Desk.exe. Your existing database remains in your Windows profile.
+
+Dashboard: click a summary card to view matching work.
+Clients: switch between cards and compact table, or open a client workspace.
+Master Work Table: combine search and filters; edit status and dates directly.
+Calendar: choose Month, Week or Day; click an entry to edit its details.
+Settings: see the local database location and application version.
+
+Keyboard: Ctrl+F focuses page search; Ctrl+N adds a client; Ctrl+R refreshes.
+Enter saves an open form; Escape cancels. Standard Windows window controls work.
+
+Exactly three statuses: Not Started, In Progress and Completed.
+Red deadline dates indicate overdue unfinished work. Completing the work removes
+it from the overdue count. Removing a deadline is supported.
+
+Distribution is portable and unsigned. No installer is included.
+Test evidence and remaining platform limits: see the GitHub release notes.
+Private repository: sign in to your GitHub account to download releases.
+https://github.com/Fahad-uz/CA-Desk/releases

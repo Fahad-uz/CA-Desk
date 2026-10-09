@@ -75,5 +75,5 @@ public sealed class ShellViewModel : Observable
 public sealed class SettingsViewModel(string databasePath)
 {
     public string DatabasePath {get;}=databasePath;
-    public string Version=>"1.0.0";
+    public string Version=>typeof(App).Assembly.GetName().Version?.ToString(3)??"1.0.0";
 }
