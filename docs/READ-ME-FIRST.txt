@@ -1,6 +1,6 @@
-CA DESK 1.0.0 - WINDOWS (64-BIT)
+CA DESK {{VERSION}} - WINDOWS (64-BIT)
 
-1. Extract ALL files from CA-Desk-v1.0.0-win-x64.zip into a folder.
+1. Extract ALL files from CA-Desk-v{{VERSION}}-win-x64.zip into a folder.
 2. Open that folder and double-click CA-Desk.exe.
 3. Click Add Client, then open its workspace and add work areas.
 
@@ -21,7 +21,9 @@ Calendar: choose Month, Week or Day; click an entry to edit its details.
 Settings: see the local database location and application version.
 
 Keyboard: Ctrl+F focuses page search; Ctrl+N adds a client; Ctrl+R refreshes.
-Enter saves an open form; Escape cancels. Standard Windows window controls work.
+Enter saves an open form; Escape cancels. The top-right title-bar buttons
+minimize, maximize/restore and close CA Desk. Double-click its title bar to
+maximize/restore, or drag the title bar to move the window.
 
 Exactly three statuses: Not Started, In Progress and Completed.
 Red deadline dates indicate overdue unfinished work. Completing the work removes

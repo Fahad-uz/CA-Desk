@@ -7,7 +7,7 @@ A native, offline Windows desktop application for Chartered Accountants who mana
 [Latest Windows release](https://github.com/Fahad-uz/CA-Desk/releases/latest) · [All releases](https://github.com/Fahad-uz/CA-Desk/releases)
 
 1. Sign in to GitHub with access to this private repository.
-2. Download `CA-Desk-v1.0.0-win-x64.zip` from the release's **Assets** section.
+2. Download `CA-Desk-v1.0.1-win-x64.zip` from the release's **Assets** section.
 3. Extract **all** files into a folder and double-click `CA-Desk.exe`.
 4. Choose **Add Client**, open the client's workspace and choose **Add Work Area**.
 
@@ -21,7 +21,7 @@ The portable package includes .NET and SQLite; end users need no developer tools
 - Master Work Table across all clients, combined search/status/deadline/client filters, result count, sortable headers and inline status/date editing. Rows are virtualised.
 - Month, week and day calendars, client filter, today highlighting, previous/next/today navigation and overflow drill-down. Entries open the same work editor.
 - Automatic completed/total progress. Zero-work clients show “No work areas.” Overdue is a deadline condition; it never replaces the work status.
-- Consistent forms, native Windows window controls, resizable layout and keyboard access.
+- Consistent forms, visible Minimize / Maximize / Restore / Close title-bar buttons, native Windows resizing and keyboard access.
 
 `Ctrl+F` focuses page search; `Ctrl+N` adds a client; `Ctrl+R` refreshes. `Enter` saves an editor; `Escape` cancels. Deleting a client or work area requires confirmation.
 
@@ -61,10 +61,10 @@ Core tests and cross-compilation can also run on a non-Windows developer host wi
 After a successful build and test run, run on Windows:
 
 ```powershell
-./scripts/Publish.ps1 -Version 1.0.0
+./scripts/Publish.ps1 -Version 1.0.1
 ```
 
-This publishes a self-contained x64 app, launches its executable against an isolated test database, creates `artifacts/CA-Desk-v1.0.0-win-x64.zip` and writes its SHA-256 checksum. No test database enters the distribution. There is no installer or code-signing certificate in this version.
+This publishes a self-contained x64 app, launches its executable against an isolated test database, creates `artifacts/CA-Desk-v1.0.1-win-x64.zip` and writes its SHA-256 checksum. No test database enters the distribution. There is no installer or code-signing certificate in this version.
 
 ## Automated builds and future releases
 
@@ -94,4 +94,4 @@ Add transactional schema migrations in `Repository` when data structure changes;
 | `scripts/Publish.ps1` | Portable packaging and executable verification |
 | `docs` | Architecture, usage, test evidence and release notes |
 
-See [architecture](docs/architecture.md) for the data flow and [release notes](docs/releases/v1.0.0.md) for limitations. Automated Windows-runner testing does not substitute for physical Windows 10/11 acceptance or every display-scaling configuration.
+See [architecture](docs/architecture.md) for the data flow and [release notes](docs/releases/v1.0.1.md) for limitations. Automated Windows-runner testing does not substitute for physical Windows 10/11 acceptance or every display-scaling configuration.
