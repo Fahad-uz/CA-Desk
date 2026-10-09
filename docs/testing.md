@@ -2,16 +2,17 @@
 
 ## Confirmed checkpoint: 9 October 2026
 
-[Windows workflow run 37886005660](https://github.com/Fahad-uz/CA-Desk/actions/runs/37886005660) completed successfully for commit `65bf32f8ab1cda4c2e760cb6252b16761c834c05`.
+[Windows workflow run 37887871875](https://github.com/Fahad-uz/CA-Desk/actions/runs/37887871875) completed successfully for application commit `f7aa71f5d47e9b912df5a7bb520268f8ea1b8e9b`. The official release workflow repeats these checks against its tagged source.
 
 - Release solution build: zero warnings and zero errors.
 - 31 xUnit core tests passed. Includes creation, rename, deletion and cascading foreign keys, duplicate names, blank input, all three statuses, deadline add/edit/removal, multiline and long notes, restart persistence, parameterised SQL, all deadline filters, combined filters, sorting, progress and a 100-client/2,000-work-area dataset.
-- 32 native WPF checks passed. Includes the actual empty dashboard, editor commands, client search control, inline status dropdown/date picker, synchronized counts and progress, filter preservation, month overflow/day drill-down, entry opening, calendar edits/client filter/view memory, cancellation and confirmation of deletes, rendered pages/forms, reopening the WPF app and no binding errors.
-- A self-contained Windows x64 package was produced. Independent launch of that published package is added to the final release workflow.
+- 38 native WPF checks passed. Includes the actual empty dashboard, editor commands, client search control, inline status dropdown/date picker and native popups, invalid typed-date validation and correction, synchronized counts and progress, combined filters and preservation, visible reset selections, all header sorts, month overflow/day drill-down, entry opening, calendar edits/client filter/view memory, cancellation and confirmation of deletes, reopening the WPF app and no binding errors.
+- Actual WPF content was rendered at 1920×1080, 1420×900 and 1000×680, plus modal editor sizes. Dashboard, clients, master table, settings, calendar modes and forms were visually reviewed. The native table scrolled through 1,505 work areas with row virtualisation enabled.
+- The self-contained Windows x64 executable was independently launched from its published folder. It rendered WPF, wrote and reopened an isolated SQLite database and updated dashboard progress successfully. The portable ZIP and checksum were produced after that verification.
 
-The first native run found a read-only progress binding error that was not detectable by compilation. It was corrected, and the above rerun passed.
+The first native run found a read-only progress binding error that was not detectable by compilation. It was corrected, and subsequent runs passed. Screenshot review also led to wider table controls and a visible All Statuses selection after reset; the final native checks include those fixes.
 
-The first screenshot run was limited by the hosted desktop resolution. Final checks render the actual WPF content at explicit 1920×1080 and 1000×680 sizes independent of that limit. New checks also exercise the styled selector popups and 1,505-row native table virtualisation. Final release evidence is uploaded by the release workflow, including package launch verification.
+The first screenshot run was limited by the hosted desktop resolution. Final checks render the actual WPF content at explicit sizes independent of that limit. Final release evidence is uploaded as the release-verification artifact, including screenshots, native results, xUnit results and packaged executable verification.
 
 ## Test boundaries
 
