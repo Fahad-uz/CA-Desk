@@ -30,10 +30,11 @@ internal sealed class WindowViewport
                 var gap = WindowPlacement.Gap(work, scale);
                 window.Width = Math.Min(window.Width, (work.Width - 2 * gap) / scale);
                 window.Height = Math.Min(window.Height, (work.Height - 2 * gap) / scale);
+                FitNormal(true);
             }
         };
-        // WPF has selected and centered the startup monitor by Loaded. Correct the
-        // native rectangle before the user needs to minimize, restore or drag it.
+        // Recheck after WPF applies its startup bounds, before the user needs to
+        // minimize, restore or drag the window.
         window.Loaded += (_, _) => { FitNormal(true); UpdateInsets(); };
         window.StateChanged += (_, _) => Schedule(false);
         window.Closed += (_, _) => { closed = true; source?.RemoveHook(OnMessage); };
@@ -76,7 +77,14 @@ internal sealed class WindowViewport
         var current = rect.Bounds;
         var fitted = WindowPlacement.Fit(current, work, scale, center);
         if (fitted != current)
-            SetWindowPos(handle, IntPtr.Zero, fitted.Left, fitted.Top, fitted.Width, fitted.Height, 0x0014);
+        {
+            // Update WPF's placement properties as well as the HWND. A native-only
+            // move can be overwritten by WPF's cached startup position on first render.
+            window.Width = fitted.Width / scale;
+            window.Height = fitted.Height / scale;
+            window.Left = fitted.Left / scale;
+            window.Top = fitted.Top / scale;
+        }
     }
 
     private void UpdateInsets()
@@ -155,5 +163,4 @@ internal sealed class WindowViewport
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool GetMonitorInfo(IntPtr monitor, ref MonitorInfo info);
     [DllImport("user32.dll")] private static extern uint GetDpiForWindow(IntPtr hwnd);
     [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool GetWindowRect(IntPtr hwnd, out NativeRect rect);
-    [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool SetWindowPos(IntPtr hwnd, IntPtr insertAfter, int x, int y, int width, int height, uint flags);
 }
