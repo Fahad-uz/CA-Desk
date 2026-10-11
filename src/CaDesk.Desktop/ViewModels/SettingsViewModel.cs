@@ -5,7 +5,7 @@ public sealed class SettingsViewModel(ShellViewModel shell) : Observable
 {
     public string DatabasePath => shell.Store.Repository.DatabasePath;
     public string BackupDirectory => shell.Store.Repository.BackupDirectory;
-    public string Version => typeof(App).Assembly.GetName().Version?.ToString(3) ?? "1.1.1";
+    public string Version => typeof(App).Assembly.GetName().Version?.ToString(3) ?? "1.1.2";
     private bool busy;
     public bool IsBusy { get => busy; private set { Set(ref busy, value); Raise(nameof(CanUse)); } }
     public bool CanUse => !IsBusy;

@@ -7,7 +7,7 @@ A native, offline Windows desktop application for Chartered Accountants who mana
 [Latest Windows release](https://github.com/Fahad-uz/CA-Desk/releases/latest) · [All releases](https://github.com/Fahad-uz/CA-Desk/releases)
 
 1. Sign in to GitHub with access to this private repository.
-2. Download `CA-Desk-v1.1.1-win-x64.exe` from the release's **Assets** section.
+2. Download `CA-Desk-v1.1.2-win-x64.exe` from the release's **Assets** section.
 3. Place the executable on your Desktop or in any folder and double-click it. The ZIP is also available with instructions and notices.
 4. Choose **Add Client**, open the client's workspace and choose **Add Work Area**.
 
@@ -25,7 +25,7 @@ The portable package includes .NET and SQLite; end users need no developer tools
 - Independent personal Study Notes: heading, multiline plain-text body, editable date, instant heading/body search, newest-date-first cards and confirmed deletion. The purple Notes navigation is on the right.
 - Month, week and day calendars with purple study-note entries, Show Everything / Client Deadlines Only / Study Notes Only, client filter, today highlighting, previous/next/today navigation and overflow drill-down. Entries open the corresponding work or study-note editor. Personal notes stay visible when filtering by client.
 - Automatic completed/total progress. Zero-work clients show “No work areas.” Overdue is a deadline condition; it never replaces the work status.
-- Consistent forms, visible Minimize / Maximize / Restore / Close title-bar buttons, native Windows resizing and keyboard access.
+- Consistent forms, Minimize / Maximize / Restore / Close title-bar buttons visible from first launch, automatic sizing for the current usable screen area, native Windows resizing and keyboard access.
 
 `Ctrl+F` focuses page search; `Ctrl+N` creates a note when Notes is active, otherwise adds a client; `Ctrl+R` refreshes. `Ctrl+S` saves an editor; `Enter` saves outside multiline text fields; `Escape` cancels. Deleting a client, work area or study note requires confirmation. The note editor warns before discarding unsaved changes.
 
@@ -73,10 +73,10 @@ Core tests and cross-compilation can also run on a non-Windows developer host wi
 After a successful build and test run, run on Windows:
 
 ```powershell
-./scripts/Publish.ps1 -Version 1.1.1
+./scripts/Publish.ps1 -Version 1.1.2
 ```
 
-This publishes a self-contained single-file x64 app with embedded native libraries. It copies only the EXE into an isolated Desktop-style folder, launches it from a different working directory with a fresh extraction cache, and verifies WPF, SQLite, profile, backup and window controls. It creates `artifacts/CA-Desk-v1.1.1-win-x64.exe`, the optional ZIP and SHA-256 checksums. No test database enters the distribution. There is no installer or code-signing certificate in this version.
+This publishes a self-contained single-file x64 app with embedded native libraries. It copies only the EXE into an isolated Desktop-style folder, launches it from a different working directory with a fresh extraction cache, and verifies WPF, SQLite, profile, backup and window controls. It creates `artifacts/CA-Desk-v1.1.2-win-x64.exe`, the optional ZIP and SHA-256 checksums. No test database enters the distribution. There is no installer or code-signing certificate in this version.
 
 ## Automated builds and future releases
 
@@ -106,4 +106,4 @@ Add transactional schema migrations in `Repository` when data structure changes;
 | `scripts/Publish.ps1` | Portable packaging and executable verification |
 | `docs` | Architecture, usage, test evidence and release notes |
 
-See [architecture](docs/architecture.md) for the data flow and [release notes](docs/releases/v1.1.1.md) for limitations. Automated Windows-runner testing does not substitute for physical Windows 10/11 acceptance or every display-scaling configuration.
+See [architecture](docs/architecture.md) for the data flow and [release notes](docs/releases/v1.1.2.md) for limitations. Automated Windows-runner testing does not substitute for physical Windows 10/11 acceptance or every display-scaling configuration.

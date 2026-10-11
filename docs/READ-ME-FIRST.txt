@@ -41,7 +41,8 @@ Keyboard: Ctrl+F focuses page search; Ctrl+N adds a note when Notes is active,
 otherwise a client; Ctrl+R refreshes.
 Ctrl+S saves an open form; Escape cancels. Unsaved note changes require
 confirmation before discarding. The top-right title-bar buttons
-minimize, maximize/restore and close CA Desk. Double-click its title bar to
+minimize, maximize/restore and close CA Desk. The window fits your usable
+screen area on startup, including scaled displays. Double-click its title bar to
 maximize/restore, or drag the title bar to move the window.
 
 Exactly three statuses: Not Started, In Progress and Completed.

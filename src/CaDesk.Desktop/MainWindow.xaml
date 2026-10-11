@@ -80,7 +80,7 @@
     <KeyBinding Key="N" Modifiers="Control" Command="{Binding NewItemCommand}"/>
     <KeyBinding Key="R" Modifiers="Control" Command="{Binding RefreshCommand}"/>
   </Window.InputBindings>
-  <Grid>
+  <Grid x:Name="WindowLayoutRoot">
     <Grid.RowDefinitions>
       <RowDefinition Height="44"/>
       <RowDefinition Height="*"/>

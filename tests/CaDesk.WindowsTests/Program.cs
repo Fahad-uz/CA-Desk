@@ -113,6 +113,15 @@ internal static class Program
             window.Content = root;
         }
     }
+    private static async Task CaptureLive(Window window, string name)
+    {
+        await Dispatcher.Yield(DispatcherPriority.ApplicationIdle); window.UpdateLayout();
+        var dpi = VisualTreeHelper.GetDpi(window);
+        var image = new RenderTargetBitmap((int)Math.Ceiling(window.ActualWidth * dpi.DpiScaleX), (int)Math.Ceiling(window.ActualHeight * dpi.DpiScaleY), dpi.PixelsPerInchX, dpi.PixelsPerInchY, PixelFormats.Pbgra32);
+        image.Render(window);
+        var png = new PngBitmapEncoder(); png.Frames.Add(BitmapFrame.Create(image));
+        using var stream = File.Create(Path.Combine(output, name + ".png")); png.Save(stream);
+    }
     private static async Task Run()
     {
         var folder = Path.Combine(Path.GetTempPath(), "CaDeskWindowsTests", Guid.NewGuid().ToString("N"));
@@ -122,6 +131,8 @@ internal static class Program
         var window = new MainWindow(store, false);
         window.Show();
         await Until(() => window.IsLoaded);
+        Check(WindowViewport.CaptionIsOnScreen(window), "First launch places every caption button inside the actual monitor work area and makes it hit-testable before any minimize or restore");
+        await CaptureLive(window, "13-first-launch-visible-caption");
         var minimize = (Button)window.FindName("MinimizeButton");
         var maximize = (Button)window.FindName("MaximizeRestoreButton");
         var close = (Button)window.FindName("CloseButton");
@@ -134,10 +145,19 @@ internal static class Program
         await Until(() => window.WindowState == WindowState.Normal);
         maximize.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Until(() => window.WindowState == WindowState.Maximized);
+        await Until(() => WindowViewport.CaptionIsOnScreen(window));
+        Check(true, "Maximized caption controls remain fully on screen and hit-testable");
+        await CaptureLive(window, "14-maximized-visible-caption");
         Check(System.Windows.Automation.AutomationProperties.GetName(maximize) == "Restore", "Maximize title-bar button maximizes and changes to Restore");
         maximize.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Until(() => window.WindowState == WindowState.Normal);
         Check(System.Windows.Automation.AutomationProperties.GetName(maximize) == "Maximize", "Restore title-bar button returns to normal window size");
+        Check(WindowViewport.CaptionIsOnScreen(window), "Restoring retains all caption buttons inside the monitor work area");
+        var maximizedStartup = new MainWindow(store, false) { WindowState = WindowState.Maximized };
+        maximizedStartup.Show();
+        await Until(() => maximizedStartup.IsLoaded && WindowViewport.CaptionIsOnScreen(maximizedStartup));
+        Check(true, "Opening directly in Maximized state shows usable caption controls without a minimize/restore workaround");
+        maximizedStartup.Close();
         var shell = window.Shell;
         var dialogs = new TestDialogs();
         shell.Dialogs = dialogs;

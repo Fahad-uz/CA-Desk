@@ -10,6 +10,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="CaDesk.WindowsTests"/>
     <Resource Include="Assets/CaDesk.ico"/>
     <ProjectReference Include="../CaDesk.Core/CaDesk.Core.csproj"/>
   </ItemGroup>

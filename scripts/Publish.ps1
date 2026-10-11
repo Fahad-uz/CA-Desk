@@ -1,4 +1,4 @@
-param([string]$Version = "1.1.1")
+param([string]$Version = "1.1.2")
 $ErrorActionPreference = "Stop"
 if ($Version -notmatch '^\d+\.\d+\.\d+$') { throw "Use a semantic version such as 1.0.0." }
 if ($env:OS -ne 'Windows_NT') { throw "Packaging and executable verification must run on Windows." }

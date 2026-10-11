@@ -19,6 +19,7 @@ public partial class MainWindow : Window
     public MainWindow(ApplicationStore store, bool loadOnOpen = true)
     {
         InitializeComponent();
+        _ = new WindowViewport(this, WindowLayoutRoot);
         Shell = new(store);
         DataContext = Shell;
         Shell.Dialogs = new DialogService(Shell, this);

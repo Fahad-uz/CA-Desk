@@ -21,6 +21,9 @@ internal static class InstallVerification
         {
             try
             {
+                await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
+                if (!WindowViewport.CaptionIsOnScreen(window)) throw new InvalidOperationException("Packaged first-launch caption is outside the usable screen area or cannot receive input.");
+                Capture(window, Path.Combine(folder, "first-launch-caption.png"));
                 await store.ReloadAsync();
                 await store.SaveClientAsync(null, "Portable launch test", "", DateOnly.FromDateTime(DateTime.Today).AddDays(5));
                 var c = store.Snapshot.Clients.Single();
@@ -54,6 +57,9 @@ internal static class InstallVerification
                 await WaitForState(window, WindowState.Normal);
                 maximize.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 await WaitForState(window, WindowState.Maximized);
+                await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
+                if (!WindowViewport.CaptionIsOnScreen(window)) throw new InvalidOperationException("Packaged maximized caption is outside the usable screen area or cannot receive input.");
+                Capture(window, Path.Combine(folder, "maximized-caption.png"));
                 maximize.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 await WaitForState(window, WindowState.Normal);
                 await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
@@ -71,12 +77,21 @@ internal static class InstallVerification
                     await Task.Delay(25);
                 if (!closed)
                     throw new InvalidOperationException("Packaged Close button did not close the window.");
-                File.WriteAllText(Path.Combine(folder, "result.txt"), "PASS: Published self-contained single-file win-x64 executable launched, rendered WPF, wrote SQLite, reopened it, preserved study notes, client due dates and profile name, exported/restored a verified backup, displayed the personal greeting and sidebar name, updated the calendar and dashboard progress and operated Minimize, Maximize, Restore and Close title-bar buttons.");
+                File.WriteAllText(Path.Combine(folder, "result.txt"), "PASS: Published self-contained single-file win-x64 executable launched with every caption button on screen and hit-testable before any minimize/restore, retained visible maximized controls, rendered WPF, wrote SQLite, reopened it, preserved study notes, client due dates and profile name, exported/restored a verified backup, displayed the personal greeting and sidebar name, updated the calendar and dashboard progress and operated Minimize, Maximize, Restore and Close title-bar buttons.");
                 app.Shutdown(0);
             }
             catch (Exception e) { File.WriteAllText(Path.Combine(folder, "failure.txt"), e.ToString()); app.Shutdown(1); }
         };
         window.Show();
+    }
+    private static void Capture(Window window, string path)
+    {
+        window.UpdateLayout();
+        var dpi = VisualTreeHelper.GetDpi(window);
+        var image = new RenderTargetBitmap((int)Math.Ceiling(window.ActualWidth * dpi.DpiScaleX), (int)Math.Ceiling(window.ActualHeight * dpi.DpiScaleY), dpi.PixelsPerInchX, dpi.PixelsPerInchY, PixelFormats.Pbgra32);
+        image.Render(window);
+        var png = new PngBitmapEncoder(); png.Frames.Add(BitmapFrame.Create(image));
+        using var stream = File.Create(path); png.Save(stream);
     }
     private static async Task WaitForState(Window window, WindowState state)
     {
