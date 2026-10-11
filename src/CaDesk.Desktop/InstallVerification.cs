@@ -22,8 +22,9 @@ internal static class InstallVerification
             try
             {
                 await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
-                if (!WindowViewport.CaptionIsOnScreen(window)) throw new InvalidOperationException("Packaged first-launch caption is outside the usable screen area or cannot receive input.");
                 Capture(window, Path.Combine(folder, "first-launch-caption.png"));
+                File.WriteAllText(Path.Combine(folder, "first-caption-bounds.txt"), WindowViewport.CaptionDiagnostics(window));
+                if (!WindowViewport.CaptionIsOnScreen(window)) throw new InvalidOperationException("Packaged first-launch caption is outside the usable screen area or cannot receive input: " + WindowViewport.CaptionDiagnostics(window));
                 await store.ReloadAsync();
                 await store.SaveClientAsync(null, "Portable launch test", "", DateOnly.FromDateTime(DateTime.Today).AddDays(5));
                 var c = store.Snapshot.Clients.Single();

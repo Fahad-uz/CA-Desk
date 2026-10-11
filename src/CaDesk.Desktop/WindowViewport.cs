@@ -116,6 +116,23 @@ internal sealed class WindowViewport
         return true;
     }
 
+    internal static string CaptionDiagnostics(Window window)
+    {
+        var hwnd = new WindowInteropHelper(window).Handle;
+        TryMonitor(hwnd, out var work, out var scale);
+        GetWindowRect(hwnd, out var native);
+        var info = new List<string> { $"state={window.WindowState}; size={window.Width}x{window.Height}; actual={window.ActualWidth}x{window.ActualHeight}; native={native.Bounds}; work={work}; scale={scale}" };
+        foreach (var name in new[] { "MinimizeButton", "MaximizeRestoreButton", "CloseButton" })
+        {
+            var button = (Button)window.FindName(name);
+            var first = button.PointToScreen(new Point(0, 0));
+            var last = button.PointToScreen(new Point(button.ActualWidth, button.ActualHeight));
+            var hit = window.InputHitTest(window.PointFromScreen(button.PointToScreen(new Point(button.ActualWidth / 2, button.ActualHeight / 2))));
+            info.Add($"{name}: visible={button.IsVisible}; {first}..{last}; hit={hit?.GetType().Name ?? "null"}");
+        }
+        return string.Join(" | ", info);
+    }
+
     private static bool TryMonitor(IntPtr hwnd, out PixelBounds work, out double scale)
     {
         var info = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>() };

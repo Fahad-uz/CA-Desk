@@ -39,6 +39,8 @@ jobs:
           dotnet restore CaDesk.slnx
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           dotnet build CaDesk.slnx -c Release --no-restore
+      - name: Exercise and render native Windows interface
+        run: dotnet run --project tests/CaDesk.WindowsTests -c Release --no-build -- artifacts/windows-checks
       - name: Run core tests
         run: dotnet test tests/CaDesk.Tests -c Release --no-build --logger "trx;LogFileName=release.trx"
       - name: Verify upgrade from the published previous release
@@ -46,8 +48,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: ./scripts/Verify-Upgrade.ps1
-      - name: Exercise and render native Windows interface
-        run: dotnet run --project tests/CaDesk.WindowsTests -c Release --no-build -- artifacts/windows-checks
       - name: Build and launch the self-contained Windows package
         shell: pwsh
         run: ./scripts/Publish.ps1 -Version $env:RELEASE_VERSION

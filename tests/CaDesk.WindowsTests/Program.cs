@@ -129,10 +129,13 @@ internal static class Program
         var store = new ApplicationStore(repo);
         await store.ReloadAsync();
         var window = new MainWindow(store, false);
+        var firstRendered = false;
+        window.ContentRendered += (_, _) => firstRendered = true;
         window.Show();
-        await Until(() => window.IsLoaded);
-        Check(WindowViewport.CaptionIsOnScreen(window), "First launch places every caption button inside the actual monitor work area and makes it hit-testable before any minimize or restore");
+        await Until(() => window.IsLoaded && firstRendered);
         await CaptureLive(window, "13-first-launch-visible-caption");
+        File.WriteAllText(Path.Combine(output, "first-caption-bounds.txt"), WindowViewport.CaptionDiagnostics(window));
+        Check(WindowViewport.CaptionIsOnScreen(window), "First launch places every caption button inside the actual monitor work area and makes it hit-testable before any minimize or restore: " + WindowViewport.CaptionDiagnostics(window));
         var minimize = (Button)window.FindName("MinimizeButton");
         var maximize = (Button)window.FindName("MaximizeRestoreButton");
         var close = (Button)window.FindName("CloseButton");

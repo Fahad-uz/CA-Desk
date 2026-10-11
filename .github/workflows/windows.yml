@@ -21,6 +21,8 @@ jobs:
         run: dotnet restore CaDesk.slnx
       - name: Build
         run: dotnet build CaDesk.slnx -c Release --no-restore
+      - name: Exercise and render the native WPF interface
+        run: dotnet run --project tests/CaDesk.WindowsTests -c Release --no-build -- artifacts/windows-checks
       - name: Test
         run: dotnet test tests/CaDesk.Tests -c Release --no-build --logger "trx;LogFileName=core.trx"
       - name: Verify upgrade from the published previous release
@@ -28,8 +30,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: ./scripts/Verify-Upgrade.ps1
-      - name: Exercise and render the native WPF interface
-        run: dotnet run --project tests/CaDesk.WindowsTests -c Release --no-build -- artifacts/windows-checks
       - uses: actions/upload-artifact@v4
         if: always()
         with:
